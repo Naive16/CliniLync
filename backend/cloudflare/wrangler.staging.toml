@@ -1,0 +1,21 @@
+name = "clinilync-staging"
+main = "worker.ts"
+compatibility_date = "2026-10-12"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "staging"
+ALLOWED_ORIGIN = "https://clinilync-staging.<your-domain>"
+
+[assets]
+directory = "../../dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/healthz"]
+
+# Configure API_ORIGIN as a Wrangler secret or environment-specific variable.
+# Do not put a database URL, session secret, or provider secret in this file.
+# Hyperdrive should be added only after a dedicated staging database is confirmed:
+# [[hyperdrive]]
+# binding = "CLINILYNC_PG"
+# id = "<staging-hyperdrive-id>"

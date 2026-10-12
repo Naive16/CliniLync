@@ -1,0 +1,19 @@
+name = "clinilync-edge-gateway"
+main = "worker.ts"
+compatibility_date = "2024-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+ALLOWED_ORIGIN = "https://clinilync.com"
+
+# Hyperdrive PostgreSQL pooled edge connectivity
+# [[hyperdrive]]
+# binding = "CLINILYNC_PG"
+# id = "clinilync-pg-hyperdrive-id"
+
+# Rate limiting rule configurations
+# [[ratelimits]]
+# binding = "API_RATE_LIMITER"
+# namespace_id = "1001"
+# simple = { limit = 120, period = 60 }

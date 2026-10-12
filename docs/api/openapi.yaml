@@ -1,0 +1,245 @@
+openapi: 3.1.0
+info:
+  title: CLINILYNC Global Healthcare Platform API
+  version: 1.0.0
+  description: |
+    Connecting Healthcare. Simplifying Care.
+    Enterprise REST API for unified clinical EMR, healthcare CRM, patient portal, and financial workflows.
+servers:
+  - url: https://clinilync.com/api/v1
+    description: Production Edge Gateway
+  - url: http://localhost:3000/api/v1
+    description: Development Server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user credentials and issue session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                organizationId:
+                  type: string
+      responses:
+        '200':
+          description: Successful authentication
+        '401':
+          description: Invalid email or password
+
+  /patients:
+    get:
+      summary: List patients in active organization
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Patient list
+    post:
+      summary: Register new patient intake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [firstName, lastName, dateOfBirth, sex]
+              properties:
+                firstName: { type: string }
+                lastName: { type: string }
+                dateOfBirth: { type: string, format: date }
+                sex: { type: string, enum: [MALE, FEMALE, OTHER, UNKNOWN] }
+                bloodGroup: { type: string }
+                phone: { type: string }
+                email: { type: string, format: email }
+      responses:
+        '201':
+          description: Patient registered and MRN assigned
+
+  /patients/{id}:
+    get:
+      summary: Retrieve patient demographic record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Patient demographics
+        '404':
+          description: Patient not found in organization
+
+  /patients/{id}/summary:
+    get:
+      summary: Aggregate Patient 360 clinical overview
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Longitudinal clinical summary
+
+  /appointments:
+    get:
+      summary: List appointments
+      responses:
+        '200':
+          description: Appointment list
+    post:
+      summary: Schedule appointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, providerId, scheduledStart]
+              properties:
+                patientId: { type: string }
+                providerId: { type: string }
+                scheduledStart: { type: string, format: date-time }
+                durationMinutes: { type: integer, default: 30 }
+                appointmentType: { type: string }
+                reasonForVisit: { type: string }
+      responses:
+        '201':
+          description: Appointment scheduled
+        '409':
+          description: Clinician slot conflict
+
+  /appointments/{id}/check-in:
+    post:
+      summary: Mark patient as checked in
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Status transitioned to CHECKED_IN
+
+  /encounters:
+    post:
+      summary: Initiate clinical encounter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, chiefComplaint]
+              properties:
+                patientId: { type: string }
+                appointmentId: { type: string }
+                chiefComplaint: { type: string }
+      responses:
+        '201':
+          description: Encounter initiated
+
+  /encounters/{id}/finalize:
+    post:
+      summary: Sign and finalize clinical note
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Clinical note finalized and locked
+
+  /invoices:
+    get:
+      summary: List invoices
+      responses:
+        '200':
+          description: Invoice list
+    post:
+      summary: Generate clinical invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [patientId, items]
+              properties:
+                patientId: { type: string }
+                dueDate: { type: string, format: date }
+                currencyCode: { type: string, default: USD }
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required: [description, quantity, unitPrice]
+                    properties:
+                      description: { type: string }
+                      quantity: { type: integer }
+                      unitPrice: { type: string }
+      responses:
+        '201':
+          description: Invoice issued
+
+  /invoices/{id}/payments:
+    post:
+      summary: Record payment against invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, paymentMethod]
+              properties:
+                amount: { type: string }
+                paymentMethod: { type: string, enum: [CARD, CASH, INSURANCE, BANK_TRANSFER] }
+                referenceNumber: { type: string }
+      responses:
+        '201':
+          description: Payment recorded and invoice balance updated
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Opaque Token (clync_sess_...)

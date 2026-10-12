@@ -1,0 +1,6 @@
+{
+  "name": "CLINILYNC - Global Healthcare Technology Platform",
+  "description": "Connecting Healthcare. Simplifying Care. Unified healthcare platform providing CRM, EMR, patient management, clinical records, billing, and patient portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
