@@ -1,5 +1,5 @@
-import React from 'react';
-import { Activity, ArrowRight, ArrowUpRight, Bell, CalendarDays, CheckCircle2, Clock3, CreditCard, LayoutDashboard, Plus, Search, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { Activity, ArrowRight, ArrowUpRight, Bell, CalendarDays, CheckCircle2, Clock3, CreditCard, LayoutDashboard, Menu, Plus, Search, Users, X } from 'lucide-react';
 
 interface LandingViewProps { onNavigate: (path: string) => void; }
 
@@ -35,22 +35,52 @@ const DashboardPreview: React.FC = () => (
 
 const ChartIcon: React.FC = () => <Activity size={14} />;
 
-export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => (
+export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
   <div className="clinilync-public-page min-h-screen bg-white text-slate-900">
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-        <button type="button" onClick={() => onNavigate('/')} className="flex items-center gap-2.5 text-left" aria-label="Clinilync home"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-700 text-white"><Activity className="h-5 w-5" /></span><span className="text-xl font-extrabold tracking-tight text-slate-900">clinilync<span className="text-teal-700">.</span></span></button>
+    <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-4 sm:h-[76px] sm:px-8">
+        <button type="button" onClick={() => onNavigate('/')} className="flex min-w-0 items-center gap-2.5 text-left" aria-label="Clinilync home">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-700 text-white sm:h-10 sm:w-10"><Activity className="h-[18px] w-[18px]" /></span>
+          <span className="text-[19px] font-extrabold tracking-tight text-slate-900 sm:text-xl">clinilync<span className="text-teal-700">.</span></span>
+        </button>
         <nav className="hidden items-center gap-7 md:flex" aria-label="Main navigation">
-          <button onClick={() => onNavigate('/platform')} className="text-sm font-medium text-slate-600 hover:text-teal-700">Platform</button>
-          <button onClick={() => onNavigate('/solutions')} className="text-sm font-medium text-slate-600 hover:text-teal-700">Who it's for</button>
-          <button onClick={() => onNavigate('/how-it-works')} className="text-sm font-medium text-slate-600 hover:text-teal-700">How it works</button>
-          <button onClick={() => onNavigate('/security')} className="text-sm font-medium text-slate-600 hover:text-teal-700">Security</button>
+          <button onClick={() => onNavigate('/platform')} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">Platform</button>
+          <button onClick={() => onNavigate('/solutions')} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">Who it's for</button>
+          <button onClick={() => onNavigate('/how-it-works')} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">How it works</button>
+          <button onClick={() => onNavigate('/security')} className="text-sm font-medium text-slate-600 transition-colors hover:text-teal-700">Security</button>
         </nav>
-        <div className="flex items-center gap-2"><button type="button" onClick={() => onNavigate('/login')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">Sign in</button><button type="button" onClick={() => onNavigate('/register')} className="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Get started</button></div>
+        <div className="hidden items-center gap-2 md:flex">
+          <button type="button" onClick={() => onNavigate('/login')} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100">Sign in</button>
+          <button type="button" onClick={() => onNavigate('/register')} className="rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-teal-800">Get started</button>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-800 shadow-sm transition-colors hover:bg-slate-50 md:hidden"
+          aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={mobileMenuOpen}
+          aria-controls="clinilync-mobile-navigation"
+        >
+          {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
+        </button>
       </div>
-      <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 border-t border-slate-100 px-4 py-3 md:hidden" aria-label="Mobile navigation">
-        <button onClick={() => onNavigate('/platform')} className="text-xs font-medium text-slate-600">Platform</button><button onClick={() => onNavigate('/solutions')} className="text-xs font-medium text-slate-600">Who it's for</button><button onClick={() => onNavigate('/how-it-works')} className="text-xs font-medium text-slate-600">How it works</button><button onClick={() => onNavigate('/security')} className="text-xs font-medium text-slate-600">Security</button>
-      </nav>
+      {mobileMenuOpen && (
+        <div id="clinilync-mobile-navigation" className="border-t border-slate-100 bg-white px-4 pb-5 pt-3 shadow-lg md:hidden">
+          <nav className="grid gap-1" aria-label="Mobile navigation">
+            <button onClick={() => { setMobileMenuOpen(false); onNavigate('/platform'); }} className="flex min-h-11 items-center justify-between rounded-lg px-3 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">Platform <ArrowUpRight size={15} className="text-slate-400" /></button>
+            <button onClick={() => { setMobileMenuOpen(false); onNavigate('/solutions'); }} className="flex min-h-11 items-center justify-between rounded-lg px-3 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">Who it's for <ArrowUpRight size={15} className="text-slate-400" /></button>
+            <button onClick={() => { setMobileMenuOpen(false); onNavigate('/how-it-works'); }} className="flex min-h-11 items-center justify-between rounded-lg px-3 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">How it works <ArrowUpRight size={15} className="text-slate-400" /></button>
+            <button onClick={() => { setMobileMenuOpen(false); onNavigate('/security'); }} className="flex min-h-11 items-center justify-between rounded-lg px-3 text-left text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50">Security <ArrowUpRight size={15} className="text-slate-400" /></button>
+          </nav>
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+            <button type="button" onClick={() => { setMobileMenuOpen(false); onNavigate('/login'); }} className="min-h-11 rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-700">Sign in</button>
+            <button type="button" onClick={() => { setMobileMenuOpen(false); onNavigate('/register'); }} className="min-h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white">Get started</button>
+          </div>
+        </div>
+      )}
     </header>
     <main>
       <section className="cl-home-hero">
@@ -74,4 +104,5 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => (
     </main>
     <footer className="border-t border-slate-200 bg-white px-5 py-7 text-center text-xs text-slate-500">© {new Date().getFullYear()} Clinilync</footer>
   </div>
-);
+  );
+};
