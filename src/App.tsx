@@ -15,6 +15,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { LoginView } from './views/LoginView.js';
 import { LandingView } from './views/LandingView.js';
+import { PublicInfoView } from './views/PublicInfoView.js';
 import { PatientsView } from './views/StaffApp/PatientsView.js';
 import { DashboardView } from './views/StaffApp/DashboardView.js';
 import { ClinicalView } from './views/StaffApp/ClinicalView.js';
@@ -139,6 +140,15 @@ function AppContent() {
   // Public marketing site is the default route; staff and patient workspaces stay separate.
   if (currentPath === '/') {
     return <LandingView onNavigate={navigate} />;
+  }
+  const publicPages: Record<string, 'platform' | 'solutions' | 'how-it-works' | 'security'> = {
+    '/platform': 'platform',
+    '/solutions': 'solutions',
+    '/how-it-works': 'how-it-works',
+    '/security': 'security',
+  };
+  if (publicPages[currentPath]) {
+    return <PublicInfoView page={publicPages[currentPath]} onNavigate={navigate} />;
   }
 
   if (isLoading) {
