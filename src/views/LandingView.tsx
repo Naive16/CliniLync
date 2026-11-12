@@ -117,10 +117,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-slate-100/70 blur-3xl" />
           <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12 lg:py-28">
             <div className="max-w-2xl">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white px-3.5 py-2 text-xs font-semibold tracking-wide text-teal-800 shadow-sm">
-                <span className="h-2 w-2 rounded-full bg-teal-600" />
-                Healthcare, connected
-              </div>
               <h1 className="text-4xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
                 Clinic management,
                 <span className="mt-2 block text-teal-700">made simpler.</span>
@@ -135,10 +131,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                 <a href="#platform" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50">
                   Explore features
                 </a>
-              </div>
-              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-medium text-slate-500">
-                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Connected workflows</span>
-                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Role-based access</span>
               </div>
             </div>
 
