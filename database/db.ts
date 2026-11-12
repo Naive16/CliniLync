@@ -505,9 +505,25 @@ class LivePostgresClient implements IDatabaseClient {
   private pool: pg.Pool;
 
   constructor(connectionString: string) {
+    // Supabase's shared pooler uses a project-specific CA. Remove libpq-style
+    // SSL query parameters because node-postgres parses them separately and
+    // they can override the explicit TLS options below.
+    const url = new URL(connectionString);
+    url.searchParams.delete('sslmode');
+    url.searchParams.delete('sslrootcert');
+
+    const ca = fs.readFileSync(
+      path.resolve(process.cwd(), 'certs/supabase-root-2021.crt'),
+      'utf8',
+    );
+
     this.pool = new pg.Pool({
-      connectionString,
-      max: 10,
+      connectionString: url.toString(),
+      ssl: {
+        ca,
+        rejectUnauthorized: true,
+      },
+      max: 5,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,
     });
