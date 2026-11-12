@@ -360,7 +360,11 @@ export const ClinicSetupView: React.FC<ClinicSetupViewProps> = ({ onNavigate, on
 
   if (loading && !setup) return <OnboardingShell><p className="cl-onboarding-loading">Loading your clinic setup…</p></OnboardingShell>;
   if (!setup) return <OnboardingShell><div className="cl-onboarding-error" role="alert">{error || 'Clinic setup is unavailable.'}</div></OnboardingShell>;
-  const pendingAdmins = new Set((setup.pendingInvitations || []).filter((item: any) => item.role_code === 'DEPARTMENT_ADMIN').map((item: any) => item.department_id));
+  const pendingAdmins = new Set((setup.pendingInvitations || [])
+    .filter((item: any) => item.role_code === 'DEPARTMENT_ADMIN'
+      && item.department_id
+      && new Date(String(item.expires_at)).getTime() > Date.now())
+    .map((item: any) => String(item.department_id)));
   const eligibleUsers = setup.organizationUsers || [];
 
   const createDepartment = (name: string) => run(async () => {
