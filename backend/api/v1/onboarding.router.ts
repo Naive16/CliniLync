@@ -56,7 +56,21 @@ v1OnboardingRouter.post('/register', authRateLimiter, originValidationMiddleware
   const password = typeof req.body.password === 'string' ? req.body.password : '';
   const countryCode = cleanText(req.body.countryCode, 3).toUpperCase() || 'GBR';
   const currencyCode = cleanText(req.body.currencyCode, 3).toUpperCase() || 'GBP';
-  const timezone = cleanText(req.body.timezone, 80) || 'Europe/London';
+  const defaultTimeZones: Record<string, string> = {
+    MWI: 'Africa/Blantyre',
+    USA: 'America/New_York',
+    GBR: 'Europe/London',
+    ZAF: 'Africa/Johannesburg',
+    KEN: 'Africa/Nairobi',
+    TZA: 'Africa/Dar_es_Salaam',
+    BWA: 'Africa/Gaborone',
+    NGA: 'Africa/Lagos',
+    CAN: 'America/Toronto',
+    AUS: 'Australia/Sydney',
+    CHE: 'Europe/Zurich',
+    IND: 'Asia/Kolkata',
+  };
+  const timezone = cleanText(req.body.timezone, 80) || defaultTimeZones[countryCode] || 'UTC';
   const region = cleanText(req.body.region, 100);
   const city = cleanText(req.body.city, 100);
   const addressLine1 = cleanText(req.body.addressLine1, 255);
