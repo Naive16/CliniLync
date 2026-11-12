@@ -114,7 +114,12 @@ export async function getOnboardingState(organizationId: string, userId?: string
   if (!verified) missing.push(OnboardingStep.VERIFY_EMAIL);
   if (!completed.has(OnboardingStep.PROFILE) || !organization.country_code || !organization.city || !organization.currency_code || !organization.timezone) missing.push(OnboardingStep.PROFILE);
   if (!completed.has(OnboardingStep.DEPARTMENTS) || departments.rows.length === 0) missing.push(OnboardingStep.DEPARTMENTS);
-  if (departments.rows.some((department) => !department.administrator_user_id && !pendingDepartmentAdminIds.has(String(department.id)))) missing.push(OnboardingStep.DEPARTMENT_ADMINISTRATORS);
+  // Department administrators may be assigned now or deferred. The organization
+  // owner remains responsible for the department until a separate administrator is added.
+  if (!completed.has(OnboardingStep.DEPARTMENT_ADMINISTRATORS)
+    && departments.rows.some((department) => !department.administrator_user_id && !pendingDepartmentAdminIds.has(String(department.id)))) {
+    missing.push(OnboardingStep.DEPARTMENT_ADMINISTRATORS);
+  }
   if (!completed.has(OnboardingStep.STAFF_INVITATIONS)) missing.push(OnboardingStep.STAFF_INVITATIONS);
   if (!organization.onboarding_admin_user_id) missing.push(OnboardingStep.REGISTER);
   return {
