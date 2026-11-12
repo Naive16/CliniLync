@@ -14,6 +14,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
 import { LoginView } from './views/LoginView.js';
+import { LandingView } from './views/LandingView.js';
 import { PatientsView } from './views/StaffApp/PatientsView.js';
 import { DashboardView } from './views/StaffApp/DashboardView.js';
 import { ClinicalView } from './views/StaffApp/ClinicalView.js';
@@ -86,7 +87,7 @@ function AppContent() {
   const { user, activeOrganization, roles, isLoading, hasPermission, refreshSession } = useAuth();
   const [currentPath, setCurrentPath] = useState<string>(() => {
     const p = window.location.pathname;
-    return p === '/' || p.startsWith('/verification') ? '/app' : p;
+    return p.startsWith('/verification') ? '/app' : p;
   });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => localStorage.getItem('clinilync_sidebar_collapsed') === 'true');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -135,7 +136,7 @@ function AppContent() {
     });
   };
 
-  if (isLoading) {
+  // Public marketing site is the default route; staff and patient workspaces stay separate.\n  if (currentPath === '/') {\n    return <LandingView onNavigate={navigate} />;\n  }\n\n  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-600">
         <div className="flex items-center gap-3 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
