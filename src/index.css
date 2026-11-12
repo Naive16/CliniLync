@@ -1178,3 +1178,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     font-size: 10px;
   }
 }
+
+/* Public-page contrast pass: keep body copy readable on pale surfaces. */
+.clinilync-public-page .text-slate-300 { color: #59625D; }
+.clinilync-public-page .text-slate-400 { color: #68736D; }
+.clinilync-public-page .text-slate-500 { color: #68736D; }
+.clinilync-public-page button:focus-visible,
+.clinilync-public-page a:focus-visible {
+  outline: 3px solid rgba(4, 120, 87, .35);
+  outline-offset: 3px;
+}
