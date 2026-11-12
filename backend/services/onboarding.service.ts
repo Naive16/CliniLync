@@ -100,8 +100,12 @@ export async function getOnboardingState(organizationId: string, userId?: string
     }
   }
   organizationUsers.rows.sort((a, b) => String(a.last_name).localeCompare(String(b.last_name)) || String(a.first_name).localeCompare(String(b.first_name)));
-  const verified = userId
-    ? (await db.query<{ email_verified_at: string | null }>('SELECT email_verified_at FROM users WHERE id = $1', [userId])).rows[0]?.email_verified_at != null
+  // Email verification is an organization onboarding requirement. Always check
+  // the designated onboarding administrator, including during activation where
+  // there may be no requesting userId available.
+  const verificationUserId = organization.onboarding_admin_user_id || userId;
+  const verified = verificationUserId
+    ? (await db.query<{ email_verified_at: string | null }>('SELECT email_verified_at FROM users WHERE id = $1', [verificationUserId])).rows[0]?.email_verified_at != null
     : false;
   const pendingDepartmentAdminIds = new Set(invitations.rows
     .filter((row) => row.role_code === 'DEPARTMENT_ADMIN' && new Date(String(row.expires_at)).getTime() > Date.now() && row.department_id)
