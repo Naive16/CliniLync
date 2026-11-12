@@ -54,14 +54,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate }) => {
             </div>
 
             <div className="cl-login-form-card">
-              <div className="cl-login-form-card-heading">
-                <div>
-                  <h2>Sign in to your organization</h2>
-                  <p>Use your Clinilync account credentials.</p>
-                </div>
-                <span className="cl-login-secure-badge"><ShieldCheck size={14} /> Secure</span>
-              </div>
-
               {error && (
                 <div className="cl-login-error" role="alert">
                   <AlertCircle size={16} />
@@ -140,7 +132,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate }) => {
               </button>
             </div>
 
-            <p className="cl-login-footer-note"><ShieldCheck size={14} /> Your organization data is protected</p>
           </div>
         </section>
 
