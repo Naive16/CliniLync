@@ -16,8 +16,8 @@ interface LoginViewProps {
 
 export const LoginView: React.FC<LoginViewProps> = ({ onNavigate }) => {
   const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState('dr.sarah@clinilync.com');
-  const [password, setPassword] = useState('Password123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [organizationId, setOrganizationId] = useState('');
   const [error, setError] = useState<string | null>(null);
