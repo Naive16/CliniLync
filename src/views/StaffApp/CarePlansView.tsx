@@ -226,7 +226,7 @@ export const CarePlansView: React.FC<CarePlansViewProps> = ({ patientId, onNavig
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">

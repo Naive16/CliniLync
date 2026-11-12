@@ -82,6 +82,12 @@ class InProcessRelationalEngine implements IDatabaseClient {
       ,'organization_subscriptions'
       ,'subscription_events'
       ,'payment_webhook_events'
+      ,'notifications'
+      ,'organization_invitations'
+      ,'department_memberships'
+      ,'organization_onboarding_steps'
+      ,'organization_email_verifications'
+      ,'patient_portal_invitations'
     ];
     for (const name of tableNames) {
       if (!this.tables.has(name)) {
@@ -347,6 +353,17 @@ class InProcessRelationalEngine implements IDatabaseClient {
         const col = eqLitMatch[1].split('.').pop()!.toLowerCase();
         const expected = eqLitMatch[2];
         if (String(row[col]) !== String(expected)) {
+          return false;
+        }
+        continue;
+      }
+
+      // Check for boolean literals used by status and active-record filters.
+      const eqBoolMatch = trimmed.match(/([a-zA-Z0-9_.]+)\s*=\s*(TRUE|FALSE)/i);
+      if (eqBoolMatch) {
+        const col = eqBoolMatch[1].split('.').pop()!.toLowerCase();
+        const expected = eqBoolMatch[2].toUpperCase() === 'TRUE';
+        if (Boolean(row[col]) !== expected) {
           return false;
         }
         continue;

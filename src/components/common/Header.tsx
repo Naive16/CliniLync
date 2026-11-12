@@ -1,226 +1,100 @@
-/**
- * CLINILYNC Top Navigation Bar
- * 
- * Adheres to the 3-Zone Top Bar Contract:
- * [Brand Wordmark] — [4-6 Nav Links] — [Active Persona & Org Switcher]
- */
-
-import React, { useState } from 'react';
-import { useAuth, DEMO_PERSONAS, DemoPersonaKey } from '../../context/AuthContext.js';
-import { ShieldCheck, Building2, UserCircle, LogOut, ChevronDown, Activity, RefreshCw } from 'lucide-react';
+/** CLINILYNC responsive application top bar. */
+import React, { useEffect, useRef, useState } from 'react';
+import { Bell, Menu, Search, X } from 'lucide-react';
+import { api } from '../../api/client.js';
 
 interface HeaderProps {
   currentPath: string;
-  onNavigate: (path: string) => void;
-  onOpenSecurityModal: () => void;
+  onOpenMobileNav: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ currentPath, onNavigate, onOpenSecurityModal }) => {
-  const { user, activeOrganization, roles, availableOrganizations, switchOrganization, switchDemoUser, logout } = useAuth();
-  const [showPersonaMenu, setShowPersonaMenu] = useState(false);
-  const [showOrgMenu, setShowOrgMenu] = useState(false);
+const titles: Record<string, string> = {
+  '/app': 'Dashboard', '/app/patients': 'Patients', '/app/appointments': 'Appointments',
+  '/app/clinical': 'Clinical workspace', '/app/encounters': 'Encounters', '/app/prescriptions': 'Prescriptions',
+  '/app/billing': 'Billing', '/app/analytics': 'Analytics', '/app/settings': 'Settings'
+};
 
-  const primaryRole = roles[0]?.name || (user?.isSuperAdmin ? 'Super Admin' : 'Staff');
+export const Header: React.FC<HeaderProps> = ({ currentPath, onOpenMobileNav }) => {
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
+  const title = Object.entries(titles).find(([path]) => currentPath === path || (path !== '/app' && currentPath.startsWith(path)))?.[1] || 'Clinilync';
 
-  return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white border-b border-slate-200">
-      {/* Zone 1: Single text element wordmark */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => onNavigate('/')}
-          className="flex items-center gap-2.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 rounded"
-        >
-          <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-xs">
-            <Activity className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-lg font-bold tracking-tight text-slate-900 leading-tight">
-              CLINILYNC
-            </div>
-            <div className="text-[10px] text-teal-700 font-medium tracking-wide">
-              Connecting Healthcare · Simplifying Care
-            </div>
-          </div>
+  const loadNotifications = async () => {
+    setNotificationLoading(true);
+    setNotificationError(null);
+    try {
+      const result = await api.v1GetNotifications();
+      setNotifications(result.notifications || []);
+      setUnreadCount(result.unreadCount || 0);
+    } catch (error) {
+      setNotificationError((error as Error).message || 'Notifications could not be loaded.');
+    } finally {
+      setNotificationLoading(false);
+    }
+  };
+
+  useEffect(() => { void loadNotifications(); }, []);
+
+  useEffect(() => {
+    if (!showNotifications) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setShowNotifications(false); };
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) setShowNotifications(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    window.addEventListener('mousedown', closeOnOutsideClick);
+    return () => {
+      window.removeEventListener('keydown', closeOnEscape);
+      window.removeEventListener('mousedown', closeOnOutsideClick);
+    };
+  }, [showNotifications]);
+
+  const markRead = async (notificationId: string) => {
+    try {
+      await api.v1MarkNotificationRead(notificationId);
+      setNotifications((current) => current.map((item) => item.id === notificationId ? { ...item, read_at: new Date().toISOString() } : item));
+      setUnreadCount((count) => Math.max(0, count - 1));
+    } catch (error) {
+      setNotificationError((error as Error).message || 'Notification could not be updated.');
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await api.v1MarkAllNotificationsRead();
+      const readAt = new Date().toISOString();
+      setNotifications((current) => current.map((item) => ({ ...item, read_at: item.read_at || readAt })));
+      setUnreadCount(0);
+    } catch (error) {
+      setNotificationError((error as Error).message || 'Notifications could not be updated.');
+    }
+  };
+
+  return <header className="clinilync-topbar">
+    <button type="button" className="clinilync-mobile-menu-button" onClick={onOpenMobileNav} aria-label="Open navigation"><Menu size={21} /></button>
+    <div className="clinilync-topbar-heading"><h1>{title}</h1></div>
+    <div className={`clinilync-topbar-search ${showMobileSearch ? 'is-mobile-open' : ''}`}><Search size={16} aria-hidden="true" /><input aria-label="Search workspace" placeholder="Search patients, appointments..." /><button type="button" className="clinilync-search-close" onClick={() => setShowMobileSearch(false)} aria-label="Close search"><X size={17} /></button></div>
+    <div className="clinilync-topbar-actions">
+      <button type="button" className="clinilync-icon-button clinilync-mobile-search-button" onClick={() => setShowMobileSearch(true)} aria-label="Search"><Search size={18} /></button>
+      <div className="clinilync-notification-wrap" ref={notificationRef}>
+        <button type="button" className="clinilync-icon-button" aria-label="Notifications" aria-expanded={showNotifications} aria-controls="clinilync-notification-panel" onClick={() => { setShowNotifications((open) => !open); if (!showNotifications) void loadNotifications(); }}>
+          <Bell size={18} />{unreadCount > 0 && <span className="clinilync-notification-dot" aria-label={`${unreadCount} unread notifications`} />}
         </button>
+        {showNotifications && <div id="clinilync-notification-panel" className="clinilync-notification-panel" role="dialog" aria-label="Notifications">
+          <div className="clinilync-notification-panel-header"><strong>Notifications</strong>{unreadCount > 0 && <button type="button" onClick={() => void markAllRead()}>Mark all read</button>}</div>
+          {notificationLoading ? <div className="clinilync-notification-state">Loading notifications...</div>
+            : notificationError ? <div className="clinilync-notification-state clinilync-notification-error">{notificationError}</div>
+              : notifications.length === 0 ? <div className="clinilync-notification-state">You have no notifications.</div>
+                : <div className="clinilync-notification-list">{notifications.map((notification) => <button type="button" key={notification.id} className={`clinilync-notification-item ${notification.read_at ? '' : 'is-unread'}`} onClick={() => !notification.read_at && void markRead(notification.id)}>
+                  <span><strong>{notification.title}</strong><small>{notification.message}</small><time>{new Date(notification.created_at).toLocaleString()}</time></span>
+                </button>)}</div>}
+        </div>}
       </div>
-
-      {/* Zone 2: Clean text navigation links */}
-      <nav className="hidden md:flex items-center gap-4 lg:gap-5 text-xs font-medium text-slate-600">
-        <button
-          onClick={() => onNavigate('/app/patients')}
-          className={`transition-colors hover:text-slate-900 ${
-            currentPath.startsWith('/app/patients') ? 'text-teal-700 font-bold' : ''
-          }`}
-        >
-          Patients
-        </button>
-        <button
-          onClick={() => onNavigate('/app/appointments')}
-          className={`transition-colors hover:text-slate-900 ${
-            currentPath.startsWith('/app/appointments') ? 'text-teal-700 font-bold' : ''
-          }`}
-        >
-          Appointments
-        </button>
-        <button
-          onClick={() => onNavigate('/app/encounters')}
-          className={`transition-colors hover:text-slate-900 ${
-            currentPath.startsWith('/app/encounters') ? 'text-teal-700 font-bold' : ''
-          }`}
-        >
-          Encounters
-        </button>
-        <button
-          onClick={() => onNavigate('/app/providers')}
-          className={`transition-colors hover:text-slate-900 ${
-            currentPath.startsWith('/app/providers') ? 'text-teal-700 font-bold' : ''
-          }`}
-        >
-          Providers
-        </button>
-        <button
-          onClick={() => onNavigate('/app/departments')}
-          className={`transition-colors hover:text-slate-900 ${
-            currentPath.startsWith('/app/departments') ? 'text-teal-700 font-bold' : ''
-          }`}
-        >
-          Departments
-        </button>
-        <button
-          onClick={() => onNavigate('/verification')}
-          className={`transition-colors hover:text-slate-900 ${
-            currentPath.startsWith('/verification') ? 'text-teal-700 font-bold' : ''
-          }`}
-        >
-          Security & RBAC
-        </button>
-        <button
-          onClick={() => onNavigate('/patient')}
-          className={`transition-colors hover:text-slate-900 ${
-            currentPath.startsWith('/patient') ? 'text-teal-700 font-bold' : ''
-          }`}
-        >
-          Patient Portal
-        </button>
-      </nav>
-
-      {/* Zone 3: 1-2 primary actions (Persona & Organization Switcher) */}
-      <div className="flex items-center gap-3">
-        {/* Organization Switcher Dropdown */}
-        {activeOrganization && (
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowOrgMenu(!showOrgMenu);
-                setShowPersonaMenu(false);
-              }}
-              className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors whitespace-nowrap"
-            >
-              <Building2 className="w-3.5 h-3.5 text-slate-500" />
-              <span className="max-w-[130px] truncate">{activeOrganization.name}</span>
-              <span className="text-slate-400 font-mono text-[10px]">({activeOrganization.currency_code})</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
-
-            {showOrgMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-lg py-1.5 z-40">
-                <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  Select Organization (Tenant)
-                </div>
-                {availableOrganizations.map((org) => (
-                  <button
-                    key={org.id}
-                    onClick={() => {
-                      switchOrganization(org.id);
-                      setShowOrgMenu(false);
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-slate-50 ${
-                      org.id === activeOrganization.id ? 'bg-teal-50/70 font-semibold text-teal-900' : 'text-slate-700'
-                    }`}
-                  >
-                    <span className="truncate">{org.name}</span>
-                    <span className="text-[10px] text-slate-400 uppercase font-mono">{org.currency_code}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Persona Switcher Dropdown */}
-        {user ? (
-          <div className="relative">
-            <button
-              onClick={() => {
-                setShowPersonaMenu(!showPersonaMenu);
-                setShowOrgMenu(false);
-              }}
-              className="flex items-center gap-2 pl-2 pr-2.5 py-1 text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors whitespace-nowrap"
-            >
-              <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-800 font-bold flex items-center justify-center text-[11px]">
-                {user.firstName[0]}
-              </div>
-              <div className="text-left leading-tight hidden sm:block">
-                <div className="font-semibold text-slate-900">{user.firstName} {user.lastName}</div>
-                <div className="text-[10px] text-slate-500 font-normal">{primaryRole}</div>
-              </div>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
-
-            {showPersonaMenu && (
-              <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 rounded-lg shadow-lg py-2 z-40">
-                <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                  Switch Active Role Persona (Testing)
-                </div>
-                {(Object.keys(DEMO_PERSONAS) as DemoPersonaKey[]).map((key) => {
-                  const p = DEMO_PERSONAS[key];
-                  const isCurrent = user.email === p.email;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        switchDemoUser(key);
-                        setShowPersonaMenu(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs flex flex-col hover:bg-slate-50 ${
-                        isCurrent ? 'bg-teal-50/80 font-semibold text-teal-950' : 'text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-slate-900">{p.name}</span>
-                        <span className="text-[10px] text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded font-mono">{p.role}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                        <span>{p.orgName}</span>
-                        <span>·</span>
-                        <span>{p.email}</span>
-                      </div>
-                    </button>
-                  );
-                })}
-                <div className="border-t border-slate-100 my-1"></div>
-                <button
-                  onClick={() => {
-                    logout();
-                    onNavigate('/login');
-                  }}
-                  className="w-full text-left px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50 flex items-center gap-2"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <button
-            onClick={() => onNavigate('/login')}
-            className="px-4 py-2 text-xs font-semibold text-white bg-teal-700 rounded-lg hover:bg-teal-800 transition-colors whitespace-nowrap"
-          >
-            Sign In
-          </button>
-        )}
-      </div>
-    </header>
-  );
+    </div>
+  </header>;
 };

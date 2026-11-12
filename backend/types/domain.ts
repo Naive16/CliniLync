@@ -9,6 +9,7 @@ export interface Organization {
   tax_id?: string;
   slug: string;
   country_code: string;
+  region?: string | null;
   currency_code: string;
   timezone: string;
   phone?: string;
@@ -16,6 +17,11 @@ export interface Organization {
   address_line1?: string;
   city?: string;
   postal_code?: string;
+  onboarding_status?: 'PENDING_EMAIL_VERIFICATION' | 'EMAIL_VERIFIED' | 'SETUP_IN_PROGRESS' | 'ACTIVE' | string;
+  onboarding_step?: number;
+  onboarding_admin_user_id?: string | null;
+  onboarding_started_at?: string | null;
+  activated_at?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -93,6 +99,11 @@ export interface Patient {
   gender: string;
   blood_group?: string | null;
   email?: string | null;
+  onboarding_status?: 'PENDING_EMAIL_VERIFICATION' | 'EMAIL_VERIFIED' | 'SETUP_IN_PROGRESS' | 'ACTIVE' | string;
+  onboarding_step?: number;
+  onboarding_admin_user_id?: string | null;
+  onboarding_started_at?: string | null;
+  activated_at?: string | null;
   phone?: string | null;
   address_line1?: string | null;
   city?: string | null;
@@ -165,6 +176,7 @@ export interface Department {
   is_active: boolean;
   created_at: string;
   updated_at?: string;
+  administrator_user_id?: string | null;
 }
 
 export interface Provider {

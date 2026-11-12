@@ -83,7 +83,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
               </div>
               <h3 className="font-semibold text-slate-900 text-sm">Lightweight EMR</h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Structured SOAP notes, vital sign tracking, ICD-10 diagnostic coding, and clinician sign-off workflow.
+                Structured clinical notes, vital sign tracking, ICD-10 diagnostic coding, and clinician sign-off workflow.
               </p>
             </div>
 
@@ -140,7 +140,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                   Granular RBAC & RLAC Gates
                 </div>
                 <p>
-                  Centralized permission checks ensure doctors, nurses, billing clerks, and patients operate with least privilege.
+                  Each person sees only the work their role allows.
                 </p>
               </div>
 

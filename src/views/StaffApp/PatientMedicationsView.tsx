@@ -434,7 +434,7 @@ export const PatientMedicationsView: React.FC<PatientMedicationsViewProps> = ({
   const pastMeds = medications.filter(m => m.status !== 'ACTIVE');
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Navigation & Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

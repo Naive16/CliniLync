@@ -207,7 +207,7 @@ export const PatientProblemsView: React.FC<PatientProblemsViewProps> = ({ patien
   const resolvedCount = problems.filter(p => p.status === 'RESOLVED').length;
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div className="flex items-center gap-3">

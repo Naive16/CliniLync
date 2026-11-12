@@ -25,6 +25,7 @@ import { orgsRouter } from './backend/api/orgs.router.js';
 import { config, validateRuntimeConfig } from './backend/config/index.js';
 import { getDatabaseClient } from './database/db.js';
 import { MigrationEngine } from './database/migrator.js';
+import { requireStaffAccount } from './backend/middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -79,13 +80,13 @@ async function bootstrap() {
 
   // Backwards-compatible legacy route aliases
   app.use('/api/auth', authRouter);
-  app.use('/api/patients', patientsRouter);
-  app.use('/api/appointments', appointmentsRouter);
-  app.use('/api/clinical', clinicalRouter);
-  app.use('/api/billing', billingRouter);
+  app.use('/api/patients', requireStaffAccount, patientsRouter);
+  app.use('/api/appointments', requireStaffAccount, appointmentsRouter);
+  app.use('/api/clinical', requireStaffAccount, clinicalRouter);
+  app.use('/api/billing', requireStaffAccount, billingRouter);
   app.use('/api/portal', portalRouter);
-  app.use('/api/admin', adminRouter);
-  app.use('/api/organizations', orgsRouter);
+  app.use('/api/admin', requireStaffAccount, adminRouter);
+  app.use('/api/organizations', requireStaffAccount, orgsRouter);
 
   // Centralized Error Handler for API
   app.use('/api', apiErrorHandler);

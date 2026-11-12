@@ -4,12 +4,14 @@ import { enforceTenantIsolation } from '../../middleware/tenant.js';
 import { requirePermission } from '../../middleware/require-permission.js';
 import { Permissions } from '../../security/permissions.js';
 import { SubscriptionError, SubscriptionService, UnconfiguredBillingProvider } from '../../services/subscription.service.js';
+import { config } from '../../config/index.js';
 
 export const v1SubscriptionsRouter = Router();
 v1SubscriptionsRouter.use(authenticateToken, enforceTenantIsolation);
 
-v1SubscriptionsRouter.get('/plans', requirePermission(Permissions.SUBSCRIPTION_VIEW), async (_req: AuthenticatedRequest, res: Response) => {
-  res.json({ data: { plans: await new SubscriptionService().listPlans() } });
+v1SubscriptionsRouter.get('/plans', requirePermission(Permissions.SUBSCRIPTION_VIEW), async (req: AuthenticatedRequest, res: Response) => {
+  const context = req.securityContext!;
+  res.json({ data: await new SubscriptionService().getPlansForOrganization(context.activeOrganization.id) });
 });
 
 v1SubscriptionsRouter.get('/current', requirePermission(Permissions.SUBSCRIPTION_VIEW), async (req: AuthenticatedRequest, res: Response) => {
@@ -42,12 +44,19 @@ v1SubscriptionsRouter.post('/cancel', requirePermission(Permissions.SUBSCRIPTION
 v1SubscriptionsRouter.post('/checkout', requirePermission(Permissions.SUBSCRIPTION_MANAGE), async (req: AuthenticatedRequest, res: Response) => {
   const context = req.securityContext!;
   try {
-    await new UnconfiguredBillingProvider().createCheckoutSession({
+    const planCode = String(req.body?.planCode || '').trim();
+    const plans = await new SubscriptionService().getPlansForOrganization(context.activeOrganization.id);
+    if (!plans.plans.some((plan) => plan.code === planCode)) {
+      res.status(400).json({ error: { code: 'SUBSCRIPTION_PLAN_INVALID', message: 'Choose an available monthly staff plan.' } });
+      return;
+    }
+    const result = await new UnconfiguredBillingProvider().createCheckoutSession({
       organizationId: context.activeOrganization.id,
-      planCode: String(req.body?.planCode || ''),
-      successUrl: String(req.body?.successUrl || ''),
-      cancelUrl: String(req.body?.cancelUrl || '')
+      planCode,
+      successUrl: `${config.appUrl.replace(/\/$/, '')}/app/settings?subscription=success`,
+      cancelUrl: `${config.appUrl.replace(/\/$/, '')}/app/settings?subscription=canceled`
     });
+    res.status(200).json({ data: result });
   } catch (error) {
     const e = error as SubscriptionError;
     res.status(e.status).json({ error: { code: e.code, message: e.message } });

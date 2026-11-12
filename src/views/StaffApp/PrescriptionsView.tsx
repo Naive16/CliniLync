@@ -61,11 +61,15 @@ export const PrescriptionsView: React.FC<PrescriptionsViewProps> = ({
       });
       setPrescriptions(res || []);
 
-      const pharmRes = await api.request<any[]>('/api/v1/pharmacies');
-      const pharms = pharmRes || [];
-      setPharmacies(pharms);
-      if (pharms.length > 0 && !dispensePharmacyId) {
-        setDispensePharmacyId(pharms[0].id);
+      if (hasPermission('pharmacy.view')) {
+        const pharmRes = await api.request<any[]>('/api/v1/pharmacies');
+        const pharms = pharmRes || [];
+        setPharmacies(pharms);
+        if (pharms.length > 0 && !dispensePharmacyId) {
+          setDispensePharmacyId(pharms[0].id);
+        }
+      } else {
+        setPharmacies([]);
       }
     } catch (err: any) {
       console.error('Failed to load prescriptions:', err);
@@ -114,7 +118,7 @@ export const PrescriptionsView: React.FC<PrescriptionsViewProps> = ({
   });
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -132,7 +136,7 @@ export const PrescriptionsView: React.FC<PrescriptionsViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Centralized hospital orders, cryptographic authorization, and pharmacy dispensary fulfillments.
+                Manage medication orders and pharmacy requests in one place.
               </p>
             </div>
           </div>

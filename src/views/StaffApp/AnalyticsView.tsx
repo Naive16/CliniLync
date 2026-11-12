@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.js';
 import { api } from '../../api/client.js';
 import { BarChart3, TrendingUp, Users, Calendar, Activity, CheckCircle2 } from 'lucide-react';
+import { PageHeader } from '../../components/common/ui.js';
 
 export const AnalyticsView: React.FC = () => {
   const { activeOrganization } = useAuth();
@@ -31,13 +32,8 @@ export const AnalyticsView: React.FC = () => {
   const currency = activeOrganization?.currency_code === 'USD' ? '$' : '£';
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      <div className="pb-4 border-b border-slate-200">
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Clinical & Operational Analytics</h1>
-        <p className="text-xs text-slate-500">
-          Executive performance summary for {activeOrganization?.name}
-        </p>
-      </div>
+    <div className="cl-ui-page space-y-6">
+      <PageHeader title="Clinical & Operational Analytics" subtitle={`Executive performance summary for ${activeOrganization?.name || 'your organization'}`} />
 
       {loading ? (
         <div className="p-12 text-center text-xs text-slate-400">Aggregating relational telemetry...</div>
@@ -61,7 +57,7 @@ export const AnalyticsView: React.FC = () => {
             </div>
 
             <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-1">
-              <span className="text-xs text-slate-500">Documented SOAP Notes</span>
+              <span className="text-xs text-slate-500">Documented Clinical Notes</span>
               <div className="text-2xl font-bold text-slate-900 tabular-nums">
                 {metrics?.clinicalEncounters || 0}
               </div>

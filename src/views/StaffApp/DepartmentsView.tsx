@@ -17,7 +17,8 @@ import {
   XCircle,
   AlertCircle,
   Edit2,
-  Power
+  Power,
+  UserPlus
 } from 'lucide-react';
 
 interface DepartmentsViewProps {
@@ -46,11 +47,18 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
   });
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [pageMessage, setPageMessage] = useState<string | null>(null);
 
   // Department Providers Detail Drawer
   const [selectedDept, setSelectedDept] = useState<any | null>(null);
   const [deptProviders, setDeptProviders] = useState<any[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
+  const [deptMembers, setDeptMembers] = useState<any[]>([]);
+  const [organizationUsers, setOrganizationUsers] = useState<any[]>([]);
+  const [selectedAdministrator, setSelectedAdministrator] = useState('');
+  const [staffInvite, setStaffInvite] = useState({ firstName: '', lastName: '', email: '', roleCode: 'DOCTOR' });
+  const [staffMessage, setStaffMessage] = useState<string | null>(null);
 
   useEffect(() => {
     loadDepartments();
@@ -58,6 +66,7 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
 
   const loadDepartments = async () => {
     setLoading(true);
+    setPageError(null);
     try {
       const res = await api.v1GetDepartments({
         search,
@@ -66,6 +75,7 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
       setDepartments(res.departments || []);
     } catch (err) {
       console.error('Failed to load departments:', err);
+      setPageError((err as Error).message || 'Departments could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -83,6 +93,7 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
       isActive: true
     });
     setErrorMsg(null);
+    setPageMessage(null);
     setShowModal(true);
   };
 
@@ -98,6 +109,7 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
       isActive: d.is_active
     });
     setErrorMsg(null);
+    setPageMessage(null);
     setShowModal(true);
   };
 
@@ -112,6 +124,7 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
         await api.v1CreateDepartment(formData);
       }
       setShowModal(false);
+      setPageMessage(editingDept ? 'Department updated.' : 'Department created.');
       await loadDepartments();
     } catch (err: any) {
       setErrorMsg(err.message || 'Operation failed');
@@ -124,9 +137,20 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
     if (!confirm('Are you sure you want to deactivate this department?')) return;
     try {
       await api.v1DeactivateDepartment(id);
+      setPageMessage('Department deactivated.');
       await loadDepartments();
     } catch (err: any) {
-      alert(err.message);
+      setPageError(err.message || 'Department could not be deactivated.');
+    }
+  };
+
+  const handleActivate = async (id: string) => {
+    try {
+      await api.v1ActivateDepartment(id);
+      setPageMessage('Department activated.');
+      await loadDepartments();
+    } catch (err: any) {
+      setPageError(err.message || 'Department could not be activated.');
     }
   };
 
@@ -136,6 +160,14 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
     try {
       const res = await api.v1GetDepartment(dept.id);
       setDeptProviders(res.assignedProviders || []);
+      const staff = await api.v1GetDepartmentMembers(dept.id);
+      setDeptMembers(staff.members || []);
+      setSelectedAdministrator(dept.administrator_user_id || '');
+      if (hasPermission('department.manage_assignments')) {
+        const users = await api.v1GetOrganizationUsers();
+        setOrganizationUsers(users.users || []);
+      }
+      setStaffMessage(null);
     } catch (err) {
       console.error('Failed to load department details:', err);
     } finally {
@@ -143,8 +175,24 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
     }
   };
 
+  const assignAdministrator = async () => {
+    if (!selectedDept || !selectedAdministrator) return;
+    try { await api.v1AssignDepartmentAdministrator(selectedDept.id, selectedAdministrator); setStaffMessage('Department administrator saved.'); await viewProviders(selectedDept); }
+    catch (err) { setStaffMessage((err as Error).message || 'Administrator could not be saved.'); }
+  };
+
+  const inviteDepartmentStaff = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedDept) return;
+    try {
+      const response = await api.v1CreateInvitation({ ...staffInvite, departmentId: selectedDept.id });
+      setStaffMessage(response.developmentToken ? `Invitation created. Development token: ${response.developmentToken}` : 'Invitation created.');
+      setStaffInvite({ firstName: '', lastName: '', email: '', roleCode: 'DOCTOR' });
+    } catch (err) { setStaffMessage((err as Error).message || 'Invitation could not be created.'); }
+  };
+
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
@@ -164,6 +212,9 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
           </button>
         )}
       </div>
+
+        {pageError && <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 flex items-center gap-2"><AlertCircle className="w-4 h-4 text-rose-600 shrink-0" /><span>{pageError}</span></div>}
+        {pageMessage && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-xs text-emerald-700 flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /><span>{pageMessage}</span></div>}
 
       {/* Search and Status Filters */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-4 flex flex-col sm:flex-row gap-3 text-xs">
@@ -257,15 +308,8 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  {hasPermission('department.update') && d.is_active && (
-                    <button
-                      onClick={() => handleDeactivate(d.id)}
-                      className="p-1.5 text-rose-400 hover:text-rose-700 rounded hover:bg-rose-50"
-                      title="Deactivate Department"
-                    >
-                      <Power className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  {hasPermission('department.update') && d.is_active && <button onClick={() => handleDeactivate(d.id)} className="p-1.5 text-rose-400 hover:text-rose-700 rounded hover:bg-rose-50" title="Deactivate Department"><Power className="w-3.5 h-3.5" /></button>}
+                  {hasPermission('department.update') && !d.is_active && <button onClick={() => handleActivate(d.id)} className="p-1.5 text-emerald-500 hover:text-emerald-700 rounded hover:bg-emerald-50" title="Activate Department"><Power className="w-3.5 h-3.5" /></button>}
                 </div>
               </div>
             </div>
@@ -309,6 +353,11 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({ onNavigate }) 
                 ))}
               </div>
             )}
+
+            {staffMessage && <div className="p-3 rounded-lg bg-sky-50 border border-sky-200 text-xs text-sky-800">{staffMessage}</div>}
+            {deptMembers.length > 0 && <div className="border-t border-slate-100 pt-4"><h4 className="text-xs font-bold text-slate-900 mb-2">Department staff</h4><div className="space-y-2">{deptMembers.map((member) => <div key={member.id} className="flex items-center justify-between text-xs"><span><strong>{member.user.first_name} {member.user.last_name}</strong><span className="block text-slate-500">{member.user.email} · {member.membership_role}</span></span>{hasPermission('department_staff.remove') && <button type="button" onClick={() => void api.v1RemoveDepartmentMember(selectedDept.id, member.user_id).then(() => viewProviders(selectedDept))} className="text-rose-700 font-semibold">Remove</button>}</div>)}</div></div>}
+            {hasPermission('department.manage_assignments') && organizationUsers.length > 0 && <div className="border-t border-slate-100 pt-4 space-y-2"><label className="block text-xs font-semibold text-slate-700">Department administrator<select value={selectedAdministrator} onChange={(event) => setSelectedAdministrator(event.target.value)} className="mt-1 w-full"><option value="">Select an active staff member</option>{organizationUsers.map((user) => <option key={user.id} value={user.id}>{user.first_name} {user.last_name} · {user.role_name}</option>)}</select></label><button type="button" onClick={() => void assignAdministrator()} disabled={!selectedAdministrator} className="px-3 py-2 rounded-lg bg-sky-700 text-white text-xs font-semibold disabled:opacity-50">Save administrator</button></div>}
+            {hasPermission('department_staff.invite') && <form onSubmit={inviteDepartmentStaff} className="border-t border-slate-100 pt-4 space-y-2"><h4 className="text-xs font-bold text-slate-900">Invite department staff</h4><div className="grid grid-cols-2 gap-2"><input required placeholder="First name" value={staffInvite.firstName} onChange={(event) => setStaffInvite({ ...staffInvite, firstName: event.target.value })} /><input required placeholder="Last name" value={staffInvite.lastName} onChange={(event) => setStaffInvite({ ...staffInvite, lastName: event.target.value })} /><input required type="email" placeholder="Work email" value={staffInvite.email} onChange={(event) => setStaffInvite({ ...staffInvite, email: event.target.value })} /><select value={staffInvite.roleCode} onChange={(event) => setStaffInvite({ ...staffInvite, roleCode: event.target.value })}><option value="DOCTOR">Doctor</option><option value="NURSE">Nurse</option><option value="RECEPTIONIST">Receptionist</option><option value="BILLING_STAFF">Billing staff</option><option value="LAB_STAFF">Lab staff</option></select></div><button type="submit" className="px-3 py-2 rounded-lg border border-sky-200 text-sky-800 text-xs font-semibold hover:bg-sky-50"><UserPlus className="inline w-4 h-4 mr-1" />Create invitation</button></form>}
 
             <div className="flex justify-end pt-2 border-t border-slate-100">
               <button

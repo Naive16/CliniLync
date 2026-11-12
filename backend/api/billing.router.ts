@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import { getDatabaseClient } from '../../database/db.js';
 import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.js';
 import { enforceTenantIsolation } from '../middleware/tenant.js';
+import { originValidationMiddleware } from '../middleware/csrf.js';
 import { requirePermission } from '../middleware/require-permission.js';
 import { Permissions } from '../security/permissions.js';
 import { AuditService } from '../security/audit.js';
@@ -63,6 +64,12 @@ billingRouter.post('/invoices', requirePermission(Permissions.BILLING_CREATE_INV
 
   if (!patientId || !items || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'patientId and items array are required' } });
+    return;
+  }
+
+  const patient = await db.query<Patient>('SELECT id FROM patients WHERE id = $1 AND organization_id = $2 AND is_active = TRUE', [patientId, context.activeOrganization.id]);
+  if (!patient.rows[0]) {
+    res.status(400).json({ error: { code: 'PATIENT_NOT_FOUND', message: 'Patient is not in the active organization.' } });
     return;
   }
 
@@ -156,6 +163,32 @@ billingRouter.post('/invoices', requirePermission(Permissions.BILLING_CREATE_INV
   res.status(201).json({ invoice: newInvoice });
 });
 
+// PATCH /api/billing/invoices/:id - Update editable invoice fields without changing its historical currency or totals.
+billingRouter.patch('/invoices/:id', requirePermission(Permissions.BILLING_UPDATE_INVOICE), originValidationMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const context = req.securityContext!;
+  const db = getDatabaseClient();
+  const current = await db.query<Invoice>('SELECT * FROM invoices WHERE id = $1 AND organization_id = $2', [req.params.id, context.activeOrganization.id]);
+  const invoice = current.rows[0];
+  if (!invoice) {
+    res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Invoice not found in this organization.' } });
+    return;
+  }
+  if (invoice.status === 'PAID') {
+    res.status(409).json({ error: { code: 'INVOICE_LOCKED', message: 'Paid invoices cannot be edited.' } });
+    return;
+  }
+  const dueDate = typeof req.body.dueDate === 'string' ? req.body.dueDate.trim() : invoice.due_date;
+  const notes = req.body.notes === null ? null : typeof req.body.notes === 'string' ? req.body.notes.trim().slice(0, 2000) : invoice.notes;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+    res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'dueDate must use YYYY-MM-DD format.' } });
+    return;
+  }
+  await db.query('UPDATE invoices SET due_date = $1, notes = $2, updated_at = $3 WHERE id = $4 AND organization_id = $5', [dueDate, notes, new Date().toISOString(), invoice.id, context.activeOrganization.id]);
+  const updated = await db.query<Invoice>('SELECT * FROM invoices WHERE id = $1 AND organization_id = $2', [invoice.id, context.activeOrganization.id]);
+  await AuditService.logEvent({ organizationId: context.activeOrganization.id, actorId: context.user.id, actorRole: context.roles.map(role => role.code).join(','), action: 'billing.invoice_updated', resourceType: 'Invoice', resourceId: invoice.id, metadata: { fields: ['dueDate', 'notes'], currency: invoice.currency }, severity: 'INFO', ipAddress: req.ip, userAgent: req.get('user-agent') });
+  res.json({ invoice: updated.rows[0] });
+});
+
 // POST /api/billing/invoices/:id/payments - Record payment
 billingRouter.post('/invoices/:id/payments', requirePermission(Permissions.BILLING_RECORD_PAYMENT), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const context = req.securityContext!;
@@ -210,8 +243,8 @@ billingRouter.post('/invoices/:id/payments', requirePermission(Permissions.BILLI
   );
 
   await db.query(
-    'UPDATE invoices SET paid_amount = $1, balance_due = $2, status = $3, updated_at = $4 WHERE id = $5',
-    [newPaidAmount, newBalance, newStatus, new Date().toISOString(), invoice.id]
+    'UPDATE invoices SET paid_amount = $1, balance_due = $2, status = $3, updated_at = $4 WHERE id = $5 AND organization_id = $6',
+    [newPaidAmount, newBalance, newStatus, new Date().toISOString(), invoice.id, context.activeOrganization.id]
   );
 
   AuditService.logEvent({

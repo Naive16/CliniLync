@@ -332,7 +332,7 @@ export const AppointmentsView: React.FC<AppointmentsViewProps> = ({ currentPath,
   // ==========================================
   if (isBookingNew) {
     return (
-      <div className="p-6 max-w-4xl mx-auto space-y-6">
+      <div className="cl-ui-page space-y-6">
         <button
           onClick={() => onNavigate('/app/appointments')}
           className="inline-flex items-center gap-1.5 text-xs text-teal-700 hover:text-teal-900 font-semibold"
@@ -659,7 +659,7 @@ export const AppointmentsView: React.FC<AppointmentsViewProps> = ({ currentPath,
   // VIEW MODE: /app/appointments (CALENDAR & WORKSPACE)
   // ==========================================
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>

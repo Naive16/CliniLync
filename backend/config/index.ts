@@ -15,6 +15,12 @@ export interface AppConfig {
   port: number;
   appName: string;
   appUrl: string;
+  email: {
+    provider: 'resend' | 'webhook' | 'none';
+    apiKey?: string;
+    webhookUrl?: string;
+    from?: string;
+  };
   database: {
     url?: string;
     maxConnections: number;
@@ -54,6 +60,16 @@ export const config: AppConfig = {
   port: Number(process.env.PORT) || 3000,
   appName: 'CLINILYNC',
   appUrl: process.env.APP_URL || 'https://clinilync.com',
+  email: {
+    provider: process.env.EMAIL_PROVIDER === 'resend'
+      ? 'resend'
+      : process.env.EMAIL_PROVIDER === 'webhook'
+        ? 'webhook'
+        : 'none',
+    apiKey: process.env.RESEND_API_KEY,
+    webhookUrl: process.env.EMAIL_WEBHOOK_URL,
+    from: process.env.EMAIL_FROM,
+  },
   database: {
     url: process.env.DATABASE_URL,
     maxConnections: Number(process.env.DB_MAX_CONNECTIONS) || 20,
@@ -84,6 +100,9 @@ export function validateRuntimeConfig(): void {
   if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'change-this-to-a-cryptographically-secure-random-string-in-production') missing.push('SESSION_SECRET');
   if (!process.env.APP_URL || !/^https:\/\//i.test(process.env.APP_URL)) missing.push('APP_URL (HTTPS URL)');
   if (!process.env.CORS_ORIGINS) missing.push('CORS_ORIGINS');
+  if (!config.email.from) missing.push('EMAIL_FROM');
+  if (config.email.provider === 'resend' && !config.email.apiKey) missing.push('RESEND_API_KEY');
+  if (config.email.provider === 'webhook' && !config.email.webhookUrl) missing.push('EMAIL_WEBHOOK_URL');
 
   if (missing.length > 0) {
     throw new Error(`Hosted runtime configuration is incomplete: ${missing.join(', ')}`);

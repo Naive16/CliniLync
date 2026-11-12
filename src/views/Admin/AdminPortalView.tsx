@@ -36,7 +36,7 @@ export const AdminPortalView: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="cl-ui-page space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>

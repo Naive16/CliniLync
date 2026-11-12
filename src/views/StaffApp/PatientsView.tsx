@@ -43,7 +43,8 @@ import {
   ChevronRight,
   Sparkles,
   ClipboardList,
-  AlertCircle
+  AlertCircle,
+  Send
 } from 'lucide-react';
 
 interface PatientsViewProps {
@@ -143,6 +144,9 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
   });
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [portalInviteSubmitting, setPortalInviteSubmitting] = useState(false);
+  const [portalInviteMessage, setPortalInviteMessage] = useState<string | null>(null);
+  const [portalInviteError, setPortalInviteError] = useState<string | null>(null);
 
   // Load patient list when on list route or when filter/org changes
   useEffect(() => {
@@ -282,6 +286,21 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
       setEditError(err?.message || 'Failed to update profile.');
     } finally {
       setEditSubmitting(false);
+    }
+  };
+
+  const handleInvitePatientPortal = async () => {
+    if (!selectedPatient) return;
+    setPortalInviteSubmitting(true);
+    setPortalInviteMessage(null);
+    setPortalInviteError(null);
+    try {
+      await api.v1CreatePatientPortalInvitation(selectedPatient.id);
+      setPortalInviteMessage('The patient portal invitation was accepted for email delivery.');
+    } catch (err) {
+      setPortalInviteError((err as Error).message || 'The patient portal invitation could not be sent.');
+    } finally {
+      setPortalInviteSubmitting(false);
     }
   };
 
@@ -1000,7 +1019,7 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
     const isArchived = selectedPatient.status === 'ARCHIVED';
 
     return (
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="cl-ui-page space-y-6">
         {/* Top Breadcrumb & Action Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
           <div className="flex items-center gap-3">
@@ -1035,7 +1054,7 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => onNavigate(`/app/patients/${selectedPatient.id}/medical-record`)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 hover:bg-teal-100 rounded-lg shadow-xs transition-colors"
@@ -1082,6 +1101,17 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
               </button>
             )}
 
+            {hasPermission('patient.update') && !selectedPatient.user_id && (
+              <button
+                onClick={() => void handleInvitePatientPortal()}
+                disabled={portalInviteSubmitting}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sky-800 bg-sky-50 border border-sky-200 hover:bg-sky-100 rounded-lg shadow-xs transition-colors disabled:opacity-60"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{portalInviteSubmitting ? 'Sending…' : 'Invite to Portal'}</span>
+              </button>
+            )}
+
             {hasPermission('patient.archive') && (
               <button
                 onClick={() => {
@@ -1100,6 +1130,12 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
             )}
           </div>
         </div>
+
+        {(portalInviteMessage || portalInviteError) && (
+          <div className={`rounded-lg border px-4 py-3 text-xs ${portalInviteError ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`} role="status">
+            {portalInviteError || portalInviteMessage}
+          </div>
+        )}
 
         {/* Archival Notice Banner if Archived */}
         {isArchived && (
@@ -1537,7 +1573,7 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
               className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 rounded-lg shadow-xs transition-colors"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Register New Patient</span>
+              <span>Add patient</span>
             </button>
           )}
         </div>

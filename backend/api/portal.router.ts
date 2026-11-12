@@ -8,7 +8,7 @@
 import { Router, Response } from 'express';
 import crypto from 'node:crypto';
 import { getDatabaseClient } from '../../database/db.js';
-import { authenticateToken, AuthenticatedRequest } from '../middleware/auth.js';
+import { authenticateToken, AuthenticatedRequest, requirePatientAccount } from '../middleware/auth.js';
 import { enforceTenantIsolation } from '../middleware/tenant.js';
 import { AuditService } from '../security/audit.js';
 import { Patient, ClinicalRecord, Appointment, Invoice } from '../types/domain.js';
@@ -16,6 +16,7 @@ import { Patient, ClinicalRecord, Appointment, Invoice } from '../types/domain.j
 export const portalRouter = Router();
 
 portalRouter.use(authenticateToken);
+portalRouter.use(requirePatientAccount);
 portalRouter.use(enforceTenantIsolation);
 
 // Helper to resolve linked patient record for authenticated user

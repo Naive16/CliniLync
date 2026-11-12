@@ -20,6 +20,15 @@ export interface AuthOrganization {
   currency_code: string;
   timezone: string;
   country_code?: string;
+  region?: string | null;
+  city?: string | null;
+  address_line1?: string | null;
+  postal_code?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  onboarding_status?: string;
+  onboarding_step?: number;
+  onboarding_admin_user_id?: string | null;
 }
 
 export interface AuthRole {
@@ -36,6 +45,7 @@ export interface AuthContextType {
   availableOrganizations: AuthOrganization[];
   isLoading: boolean;
   login: (email: string, password: string, organizationId?: string) => Promise<void>;
+  patientLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   switchOrganization: (organizationId: string) => Promise<void>;
   switchDemoUser: (personaKey: DemoPersonaKey) => Promise<void>;
@@ -156,11 +166,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setPermissions(me.permissions);
       setAvailableOrganizations(me.availableOrganizations as AuthOrganization[]);
       api.setOrganizationId(me.activeOrganization.id);
-    } catch {
+    } catch (error) {
+      // Clear stale client state and surface hydration failures to the login
+      // form instead of silently presenting an unauthenticated screen.
+      api.setToken(null);
+      api.setOrganizationId(null);
       setUser(null);
       setActiveOrganization(null);
       setRoles([]);
       setPermissions([]);
+      setAvailableOrganizations([]);
+      throw error;
     }
   };
 
@@ -188,6 +204,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const res = await api.v1Login(email, password, organizationId);
+      if (res.token) {
+        api.setToken(res.token);
+      }
+      if (res.activeOrganization) {
+        api.setOrganizationId(res.activeOrganization.id);
+      }
+      await refreshSession();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const patientLogin = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const res = await api.v1PatientLogin(email, password);
       if (res.token) {
         api.setToken(res.token);
       }
@@ -258,6 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         availableOrganizations,
         isLoading,
         login,
+        patientLogin,
         logout,
         switchOrganization,
         switchDemoUser,

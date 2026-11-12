@@ -160,11 +160,11 @@ export const ClinicalView: React.FC = () => {
   const currentPatient = patients.find(p => p.id === selectedPatientId);
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="cl-ui-page space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Clinical EMR & SOAP Consultations</h1>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Clinical workspace</h1>
           <p className="text-xs text-slate-500">
             {activeOrganization?.name} · Electronic Medical Record Workspace
           </p>
@@ -235,7 +235,7 @@ export const ClinicalView: React.FC = () => {
         <div className="lg:col-span-7 bg-white rounded-lg border border-slate-200 shadow-xs p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h2 className="text-sm font-bold text-slate-900">New Clinical Encounter (SOAP Note)</h2>
+              <h2 className="text-sm font-bold text-slate-900">New Clinical Encounter</h2>
               <p className="text-xs text-slate-500">Author comprehensive consultation record</p>
             </div>
             <span className="text-[11px] font-mono text-teal-700 bg-teal-50 px-2 py-0.5 rounded">
@@ -263,7 +263,7 @@ export const ClinicalView: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-800 mb-1">
-                  Subjective (S) <span className="font-normal text-slate-500">— Patient narrative & symptoms</span>
+                  What the patient says <span className="font-normal text-slate-500">— Symptoms, concerns, and how the patient feels</span>
                 </label>
                 <textarea
                   rows={2}
@@ -276,7 +276,7 @@ export const ClinicalView: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-800 mb-1">
-                  Objective (O) <span className="font-normal text-slate-500">— Physical exam, observations & labs</span>
+                  What we found <span className="font-normal text-slate-500">— Examination findings, observations, and measurements</span>
                 </label>
                 <textarea
                   rows={2}
@@ -289,7 +289,7 @@ export const ClinicalView: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-800 mb-1">
-                  Assessment (A) <span className="font-normal text-slate-500">— Differential diagnosis & clinical impression</span>
+                  Clinical assessment <span className="font-normal text-slate-500">— Clinician’s findings and professional assessment</span>
                 </label>
                 <textarea
                   rows={2}
@@ -302,7 +302,7 @@ export const ClinicalView: React.FC = () => {
 
               <div>
                 <label className="block font-semibold text-slate-800 mb-1">
-                  Plan (P) <span className="font-normal text-slate-500">— Therapy, medications, referrals & follow-up</span>
+                  Next steps <span className="font-normal text-slate-500">— Treatment, tests, medicines, and follow-up</span>
                 </label>
                 <textarea
                   rows={2}
@@ -319,7 +319,7 @@ export const ClinicalView: React.FC = () => {
                   disabled={isSubmittingSoap}
                   className="px-5 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg shadow-xs transition-colors disabled:opacity-50"
                 >
-                  {isSubmittingSoap ? 'Saving Note...' : 'Save Draft SOAP Note'}
+                  {isSubmittingSoap ? 'Saving Note...' : 'Save Draft Note'}
                 </button>
               </div>
             </form>
@@ -358,9 +358,9 @@ export const ClinicalView: React.FC = () => {
 
                   {rec.assessment && (
                     <div className="p-2 bg-white rounded border border-slate-200 text-[11px] text-slate-700">
-                      <div className="font-semibold text-slate-900">Assessment:</div>
+                      <div className="font-semibold text-slate-900">Clinical assessment:</div>
                       <div>{rec.assessment}</div>
-                      {rec.plan && <div className="mt-1"><strong className="text-slate-900">Plan:</strong> {rec.plan}</div>}
+                      {rec.plan && <div className="mt-1"><strong className="text-slate-900">Next steps:</strong> {rec.plan}</div>}
                     </div>
                   )}
 

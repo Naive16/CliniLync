@@ -11,6 +11,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "preview": "vite preview",
     "test": "tsx tests/run-tests.ts",
+    "test:auth": "tsx tests/auth-http.ts",
     "test:postgres": "tsx tests/postgres-preflight.ts",
     "test:postgres:clean": "tsx tests/postgres-preflight.ts --clean",
     "clean": "rm -rf dist server.js",

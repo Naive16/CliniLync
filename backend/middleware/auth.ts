@@ -170,6 +170,20 @@ export async function authenticateToken(
 
     sessionManager.cacheContext(token, context);
     req.securityContext = context;
+
+    const onboardingRoute = req.originalUrl.startsWith('/api/v1/onboarding');
+    const sessionOrTenantRoute = req.originalUrl.startsWith('/api/v1/auth')
+      || req.originalUrl.startsWith('/api/v1/me')
+      || req.originalUrl.startsWith('/api/v1/organizations');
+    if (organization.onboarding_status && organization.onboarding_status !== 'ACTIVE' && !onboardingRoute && !sessionOrTenantRoute) {
+      res.status(423).json({
+        error: {
+          code: 'ONBOARDING_INCOMPLETE',
+          message: 'Clinic setup is not complete. Finish onboarding before opening the workspace.',
+        },
+      });
+      return;
+    }
     next();
   } catch (err) {
     console.error('Error hydrating security context:', err);
@@ -180,6 +194,40 @@ export async function authenticateToken(
       }
     });
   }
+}
+
+/**
+ * Account-type boundaries are enforced server-side in addition to frontend
+ * route guards. A PATIENT role is never treated as a clinic staff role.
+ */
+export function requireStaffAccount(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  const context = req.securityContext;
+  if (!context) {
+    void authenticateToken(req, res, () => requireStaffAccount(req, res, next));
+    return;
+  }
+
+  if (context.roles.some((role) => role.code === 'PATIENT')) {
+    res.status(403).json({ error: { code: 'STAFF_ACCOUNT_REQUIRED', message: 'This resource is available to clinic staff accounts only.' } });
+    return;
+  }
+
+  next();
+}
+
+export function requirePatientAccount(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+  const context = req.securityContext;
+  if (!context) {
+    void authenticateToken(req, res, () => requirePatientAccount(req, res, next));
+    return;
+  }
+
+  if (!context.roles.some((role) => role.code === 'PATIENT')) {
+    res.status(403).json({ error: { code: 'PATIENT_ACCOUNT_REQUIRED', message: 'This resource is available to verified patient accounts only.' } });
+    return;
+  }
+
+  next();
 }
 
 /**

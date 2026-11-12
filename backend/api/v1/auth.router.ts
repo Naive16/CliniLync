@@ -25,10 +25,10 @@ export const v1AuthRouter = Router();
 const DUMMY_HASH = hashPassword('DummyTimingAttackMitigationKey123!');
 
 /**
- * POST /api/v1/auth/login
- * Authenticates user credentials, sets secure HttpOnly session cookie, and returns active security context.
+ * Shared credential login handler. The account type is determined from the
+ * server-side role relationship before a session is issued.
  */
-v1AuthRouter.post('/login', authRateLimiter, originValidationMiddleware, async (req: Request, res: Response): Promise<void> => {
+async function handleLogin(req: Request, res: Response, expectedAccountType: 'STAFF' | 'PATIENT'): Promise<void> {
   const { email, password, organizationId } = req.body;
   const requestId = (req.headers['x-request-id'] as string) || `req_${Date.now()}`;
 
@@ -147,6 +147,41 @@ v1AuthRouter.post('/login', authRateLimiter, originValidationMiddleware, async (
     }
   }
 
+  const membershipRoles = await db.query<{ role_id: string }>(
+    'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2 AND status = $3',
+    [user.id, activeOrgId, 'ACTIVE']
+  );
+  const roleCodes: string[] = [];
+  for (const membershipRole of membershipRoles.rows) {
+    const role = await db.query<{ code: string }>('SELECT code FROM roles WHERE id = $1', [membershipRole.role_id]);
+    if (role.rows[0]) roleCodes.push(role.rows[0].code);
+  }
+  const isPatientAccount = roleCodes.includes('PATIENT');
+  const accountTypeMatches = expectedAccountType === 'PATIENT' ? isPatientAccount : !isPatientAccount;
+
+  if (!accountTypeMatches) {
+    await AuditService.logEvent({
+      organizationId: activeOrgId,
+      actorId: user.id,
+      action: 'auth.login_denied_account_type',
+      resourceType: 'User',
+      resourceId: user.id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      metadata: { expectedAccountType },
+      severity: 'WARNING'
+    });
+    res.status(403).json({
+      error: {
+        code: 'ACCOUNT_TYPE_NOT_ALLOWED',
+        message: expectedAccountType === 'PATIENT'
+          ? 'This sign-in is for activated patient portal accounts.'
+          : 'Patient accounts must use the Patient Portal sign-in.'
+      }
+    });
+    return;
+  }
+
   // Issue cryptographic session token
   const token = await sessionManager.createSessionAsync(user.id, activeOrgId);
   resetRateLimit(req);
@@ -212,6 +247,22 @@ v1AuthRouter.post('/login', authRateLimiter, originValidationMiddleware, async (
       timestamp: new Date().toISOString()
     }
   });
+}
+
+/**
+ * POST /api/v1/auth/login
+ * Staff-only login for the clinic workspace.
+ */
+v1AuthRouter.post('/login', authRateLimiter, originValidationMiddleware, async (req: Request, res: Response): Promise<void> => {
+  await handleLogin(req, res, 'STAFF');
+});
+
+/**
+ * POST /api/v1/auth/patient-login
+ * Patient-only login for the separate patient portal.
+ */
+v1AuthRouter.post('/patient-login', authRateLimiter, originValidationMiddleware, async (req: Request, res: Response): Promise<void> => {
+  await handleLogin(req, res, 'PATIENT');
 });
 
 /**
@@ -250,6 +301,89 @@ v1AuthRouter.post('/logout', authenticateToken, originValidationMiddleware, asyn
       requestId,
       timestamp: new Date().toISOString()
     }
+  });
+});
+
+/**
+ * POST /api/v1/auth/change-password
+ * Changes the authenticated user's password after verifying the current password.
+ */
+v1AuthRouter.post('/change-password', authenticateToken, authRateLimiter, originValidationMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const context = req.securityContext!;
+  const { currentPassword, newPassword } = req.body || {};
+  const requestId = (req.headers['x-request-id'] as string) || `req_${Date.now()}`;
+
+  if (typeof currentPassword !== 'string' || typeof newPassword !== 'string' || newPassword.length < 6) {
+    res.status(400).json({
+      error: {
+        code: 'VALIDATION_FAILED',
+        message: 'Enter your current password and a new password with at least 6 characters.'
+      }
+    });
+    return;
+  }
+
+  if (currentPassword === newPassword) {
+    res.status(400).json({
+      error: {
+        code: 'VALIDATION_FAILED',
+        message: 'Choose a new password that differs from your current password.'
+      }
+    });
+    return;
+  }
+
+  const db = getDatabaseClient();
+  const userRes = await db.query<Pick<User, 'id' | 'password_hash' | 'salt'>>(
+    'SELECT id, password_hash, salt FROM users WHERE id = $1 AND status = $2',
+    [context.user.id, 'ACTIVE']
+  );
+  const user = userRes.rows[0];
+
+  if (!user || !verifyPassword(currentPassword, user.password_hash, user.salt)) {
+    await AuditService.logEvent({
+      organizationId: context.activeOrganization.id,
+      actorId: context.user.id,
+      action: 'auth.password_change_failed',
+      resourceType: 'User',
+      resourceId: context.user.id,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+      metadata: { reason: 'Invalid current password' },
+      severity: 'WARNING'
+    });
+
+    res.status(401).json({
+      error: {
+        code: 'INVALID_CURRENT_PASSWORD',
+        message: 'Your current password is incorrect.'
+      }
+    });
+    return;
+  }
+
+  const nextPassword = hashPassword(newPassword);
+  await db.query(
+    'UPDATE users SET password_hash = $1, salt = $2, updated_at = $3 WHERE id = $4',
+    [nextPassword.hash, nextPassword.salt, new Date().toISOString(), context.user.id]
+  );
+
+  await AuditService.logEvent({
+    organizationId: context.activeOrganization.id,
+    actorId: context.user.id,
+    action: 'auth.password_changed',
+    resourceType: 'User',
+    resourceId: context.user.id,
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+    metadata: {},
+    severity: 'INFO'
+  });
+
+  resetRateLimit(req);
+  res.status(200).json({
+    data: { message: 'Password changed successfully.' },
+    meta: { requestId, timestamp: new Date().toISOString() }
   });
 });
 

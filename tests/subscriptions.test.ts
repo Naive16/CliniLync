@@ -10,12 +10,23 @@ export async function runSubscriptionTests(): Promise<TestResult[]> {
 
   try {
     const first = await service.startTrial(organizationId, 'usr_owner');
-    if (!first.created || first.subscription.status !== 'trialing' || first.plan.trial_days !== 7) throw new Error('The standard seven-day trial was not provisioned correctly.');
+    if (!first.created || first.subscription.status !== 'trialing' || first.plan.trial_days !== 7 || first.plan.interval !== 'month') throw new Error('The monthly seat-based seven-day trial was not provisioned correctly.');
     const second = await service.startTrial(organizationId, 'usr_owner');
     if (second.created || second.subscription.id !== first.subscription.id) throw new Error('Trial provisioning is not idempotent.');
     results.push({ name: 'Subscriptions - Idempotent Seven-Day Trial Provisioning', passed: true });
   } catch (error) {
     results.push({ name: 'Subscriptions - Idempotent Seven-Day Trial Provisioning', passed: false, error: (error as Error).message });
+  }
+
+  try {
+    const overview = await service.getPlansForOrganization(organizationId);
+    const ranges = overview.plans.map((plan) => `${plan.entitlements.staff_min}-${plan.entitlements.staff_max ?? 'plus'}`);
+    if (overview.plans.length !== 5 || overview.plans.some((plan) => plan.interval !== 'month') || !ranges.includes('1-10') || !ranges.includes('11-20') || !overview.recommendedPlanCode) {
+      throw new Error('Monthly staff bands were not exposed correctly.');
+    }
+    results.push({ name: 'Subscriptions - Monthly Staff-Band Pricing', passed: true });
+  } catch (error) {
+    results.push({ name: 'Subscriptions - Monthly Staff-Band Pricing', passed: false, error: (error as Error).message });
   }
 
   try {

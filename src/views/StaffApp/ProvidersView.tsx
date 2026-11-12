@@ -254,7 +254,7 @@ export const ProvidersView: React.FC<ProvidersViewProps> = ({ providerIdParam, o
     }
 
     return (
-      <div className="p-6 max-w-6xl mx-auto space-y-6">
+      <div className="cl-ui-page space-y-6">
         {/* Back link */}
         <button
           onClick={() => onNavigate('/app/providers')}
@@ -611,7 +611,7 @@ export const ProvidersView: React.FC<ProvidersViewProps> = ({ providerIdParam, o
 
   // --- PROVIDER DIRECTORY LIST VIEW ---
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>

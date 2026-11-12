@@ -5,13 +5,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext.js';
 import { api } from '../../api/client.js';
-import { Receipt, Plus, CreditCard, DollarSign, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Receipt, Plus, CreditCard, DollarSign, CheckCircle2, AlertCircle, X, Printer, Save } from 'lucide-react';
+
+const formatMoney = (amount: unknown, currency = 'GBP') => `${currency} ${Number(amount || 0).toFixed(2)}`;
 
 export const BillingView: React.FC = () => {
   const { activeOrganization, hasPermission } = useAuth();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [invoiceEdit, setInvoiceEdit] = useState({ dueDate: '', notes: '' });
+  const [invoiceSaving, setInvoiceSaving] = useState(false);
+  const [invoiceMessage, setInvoiceMessage] = useState<string | null>(null);
 
   // Create Invoice Modal State
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -88,6 +94,25 @@ export const BillingView: React.FC = () => {
     setShowPayModal(true);
   };
 
+  const openInvoice = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setInvoiceEdit({ dueDate: invoice.due_date || '', notes: invoice.notes || '' });
+    setInvoiceMessage(null);
+  };
+
+  const saveInvoice = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedInvoice) return;
+    setInvoiceSaving(true); setInvoiceMessage(null);
+    try {
+      const response = await api.updateInvoice(selectedInvoice.id, invoiceEdit);
+      setSelectedInvoice({ ...selectedInvoice, ...response.invoice });
+      setInvoices((current) => current.map((invoice) => invoice.id === selectedInvoice.id ? { ...invoice, ...response.invoice } : invoice));
+      setInvoiceMessage('Invoice saved.');
+    } catch (err) { setInvoiceMessage((err as Error).message || 'Invoice could not be saved.'); }
+    finally { setInvoiceSaving(false); }
+  };
+
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeInvoiceForPay) return;
@@ -104,10 +129,12 @@ export const BillingView: React.FC = () => {
   const totalBilled = invoices.reduce((acc, inv) => acc + Number(inv.total_amount), 0);
   const totalPaid = invoices.reduce((acc, inv) => acc + Number(inv.paid_amount), 0);
   const totalOutstanding = invoices.reduce((acc, inv) => acc + Number(inv.balance_due), 0);
-  const currencySymbol = activeOrganization?.currency_code === 'USD' ? '$' : '£';
+  const invoiceCurrencies = Array.from(new Set(invoices.map((invoice) => invoice.currency || activeOrganization?.currency_code || 'GBP')));
+  const summaryCurrency = invoiceCurrencies.length === 1 ? invoiceCurrencies[0] : activeOrganization?.currency_code || 'GBP';
+  const mixedCurrencies = invoiceCurrencies.length > 1;
 
   return (
-    <div className="p-6 space-y-6 max-w-6xl mx-auto">
+    <div className="cl-ui-page space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-200">
         <div>
@@ -133,7 +160,7 @@ export const BillingView: React.FC = () => {
         <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs text-slate-500">Total Billed to Date</span>
           <div className="text-2xl font-bold text-slate-900 font-mono tabular-nums">
-            {currencySymbol}{totalBilled.toFixed(2)}
+            {mixedCurrencies ? 'Multiple currencies' : formatMoney(totalBilled, summaryCurrency)}
           </div>
           <div className="text-[11px] text-slate-400">{invoices.length} Invoices Issued</div>
         </div>
@@ -141,7 +168,7 @@ export const BillingView: React.FC = () => {
         <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs text-slate-500">Collected Revenue</span>
           <div className="text-2xl font-bold text-emerald-700 font-mono tabular-nums">
-            {currencySymbol}{totalPaid.toFixed(2)}
+            {mixedCurrencies ? 'Multiple currencies' : formatMoney(totalPaid, summaryCurrency)}
           </div>
           <div className="text-[11px] text-emerald-600">Settled Payments</div>
         </div>
@@ -149,7 +176,7 @@ export const BillingView: React.FC = () => {
         <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-1">
           <span className="text-xs text-slate-500">Outstanding Balance</span>
           <div className="text-2xl font-bold text-amber-700 font-mono tabular-nums">
-            {currencySymbol}{totalOutstanding.toFixed(2)}
+            {mixedCurrencies ? 'Multiple currencies' : formatMoney(totalOutstanding, summaryCurrency)}
           </div>
           <div className="text-[11px] text-amber-600">Accounts Receivable</div>
         </div>
@@ -183,7 +210,7 @@ export const BillingView: React.FC = () => {
                   const patName = inv.patient ? `${inv.patient.first_name} ${inv.patient.last_name}` : 'Patient';
 
                   return (
-                    <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors">
+                    <tr key={inv.id} className="hover:bg-slate-50/60 transition-colors cursor-pointer" onClick={() => openInvoice(inv)}>
                       <td className="px-5 py-3 font-mono font-semibold text-slate-900">
                         {inv.invoice_number}
                       </td>
@@ -196,10 +223,10 @@ export const BillingView: React.FC = () => {
                         <div className="text-[11px] text-slate-400">Due: {inv.due_date}</div>
                       </td>
                       <td className="px-5 py-3 text-right font-mono font-semibold text-slate-900 tabular-nums">
-                        {currencySymbol}{Number(inv.total_amount).toFixed(2)}
+                        {formatMoney(inv.total_amount, inv.currency)}
                       </td>
                       <td className="px-5 py-3 text-right font-mono font-bold tabular-nums text-slate-800">
-                        {currencySymbol}{Number(inv.balance_due).toFixed(2)}
+                        {formatMoney(inv.balance_due, inv.currency)}
                       </td>
                       <td className="px-5 py-3">
                         <span className={`inline-flex items-center gap-1.5 text-xs ${
@@ -218,7 +245,7 @@ export const BillingView: React.FC = () => {
                       <td className="px-5 py-3 text-right">
                         {inv.status !== 'PAID' && hasPermission('billing.record_payment') && (
                           <button
-                            onClick={() => handleOpenPayModal(inv)}
+                            onClick={(event) => { event.stopPropagation(); handleOpenPayModal(inv); }}
                             className="px-2.5 py-1 text-xs font-medium text-teal-800 bg-teal-50 hover:bg-teal-100 rounded border border-teal-200 transition-colors"
                           >
                             Record Payment
@@ -348,7 +375,7 @@ export const BillingView: React.FC = () => {
               <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                 <span className="text-slate-600">Outstanding Balance:</span>
                 <span className="font-mono font-bold text-slate-900 text-sm">
-                  {currencySymbol}{Number(activeInvoiceForPay.balance_due).toFixed(2)}
+                  {formatMoney(activeInvoiceForPay.balance_due, activeInvoiceForPay.currency)}
                 </span>
               </div>
 
@@ -403,6 +430,25 @@ export const BillingView: React.FC = () => {
                   Confirm Payment
                 </button>
               </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {selectedInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
+          <div className="invoice-print-sheet bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+            <div className="invoice-print-actions flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+              <div><h3 className="font-bold text-slate-900">Invoice {selectedInvoice.invoice_number}</h3><p className="text-xs text-slate-500">Saved currency: {selectedInvoice.currency}</p></div>
+              <div className="flex items-center gap-2"><button type="button" onClick={() => window.print()} className="px-3 py-2 text-xs font-semibold text-sky-800 border border-sky-200 rounded-lg hover:bg-sky-50"><Printer className="inline w-4 h-4 mr-1" />Print / PDF</button><button type="button" onClick={() => setSelectedInvoice(null)} className="text-slate-400 hover:text-slate-700" aria-label="Close invoice"><X className="w-5 h-5" /></button></div>
+            </div>
+            <form onSubmit={saveInvoice} className="p-6 space-y-5">
+              {invoiceMessage && <div className="invoice-print-actions p-3 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700" role="status">{invoiceMessage}</div>}
+              <div className="grid gap-4 sm:grid-cols-2 text-sm"><div><span className="text-xs text-slate-500 block">Patient</span><strong>{selectedInvoice.patient ? `${selectedInvoice.patient.first_name} ${selectedInvoice.patient.last_name}` : 'Patient'}</strong><span className="block text-xs text-slate-500">{selectedInvoice.patient?.mrn || ''}</span></div><div className="sm:text-right"><span className="text-xs text-slate-500 block">Issue date</span><strong>{selectedInvoice.issue_date}</strong><span className="block text-xs text-slate-500">Status: {selectedInvoice.status.replace(/_/g, ' ')}</span></div></div>
+              <div className="border border-slate-200 rounded-lg overflow-hidden"><table className="w-full text-sm"><thead className="bg-slate-50 text-xs text-slate-500"><tr><th className="text-left px-4 py-2">Description</th><th className="text-right px-4 py-2">Qty</th><th className="text-right px-4 py-2">Amount</th></tr></thead><tbody>{(selectedInvoice.items || []).map((item: any) => <tr key={item.id} className="border-t border-slate-100"><td className="px-4 py-2">{item.description}</td><td className="px-4 py-2 text-right">{item.quantity}</td><td className="px-4 py-2 text-right">{formatMoney(item.total_price, selectedInvoice.currency)}</td></tr>)}</tbody></table></div>
+              <div className="grid gap-2 justify-end text-sm text-right"><div>Subtotal: {formatMoney(selectedInvoice.subtotal, selectedInvoice.currency)}</div><div>Tax: {formatMoney(selectedInvoice.tax, selectedInvoice.currency)}</div><div className="font-bold text-base">Total: {formatMoney(selectedInvoice.total_amount, selectedInvoice.currency)}</div><div>Balance due: {formatMoney(selectedInvoice.balance_due, selectedInvoice.currency)}</div></div>
+              <div className="invoice-print-actions grid gap-4 sm:grid-cols-2 border-t border-slate-100 pt-4"><label className="text-xs font-semibold text-slate-700">Due date<input type="date" value={invoiceEdit.dueDate} disabled={selectedInvoice.status === 'PAID'} onChange={(event) => setInvoiceEdit({ ...invoiceEdit, dueDate: event.target.value })} className="mt-1 w-full" /></label><label className="text-xs font-semibold text-slate-700">Notes<textarea rows={3} value={invoiceEdit.notes} disabled={selectedInvoice.status === 'PAID'} onChange={(event) => setInvoiceEdit({ ...invoiceEdit, notes: event.target.value })} className="mt-1 w-full" /></label></div>
+              <div className="invoice-print-actions flex justify-end"><button type="submit" disabled={invoiceSaving || selectedInvoice.status === 'PAID' || !hasPermission('billing.update_invoice')} className="px-4 py-2 bg-sky-700 hover:bg-sky-800 text-white rounded-lg font-semibold text-xs"><Save className="inline w-4 h-4 mr-1" />{invoiceSaving ? 'Saving…' : 'Save invoice'}</button></div>
             </form>
           </div>
         </div>

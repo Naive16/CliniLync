@@ -668,7 +668,7 @@ export const EncountersView: React.FC<EncountersViewProps> = ({ currentPath = '/
   // ==========================================
   if (isNewRoute) {
     return (
-      <div className="p-4 sm:p-8 max-w-2xl mx-auto space-y-6">
+      <div className="cl-ui-page space-y-6">
         <div>
           <button
             onClick={() => onNavigate('/app/encounters')}
@@ -828,7 +828,7 @@ export const EncountersView: React.FC<EncountersViewProps> = ({ currentPath = '/
     const { encounter, patient, provider, appointment } = encounterData;
 
     return (
-      <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
+      <div className="cl-ui-page space-y-6">
         {/* Top Breadcrumb & Status Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 border border-slate-200 rounded-xl shadow-xs">
           <div>
@@ -2176,7 +2176,7 @@ export const EncountersView: React.FC<EncountersViewProps> = ({ currentPath = '/
   // VIEW 3: ENCOUNTERS ROSTER (/app/encounters)
   // ==========================================
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Roster Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

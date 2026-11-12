@@ -134,7 +134,7 @@ export const PatientMedicalRecordView: React.FC<PatientMedicalRecordViewProps> =
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="cl-ui-page space-y-6">
       {/* Navigation & Patient Identity Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

@@ -98,6 +98,23 @@ class ApiClient {
     return body.data;
   }
 
+  async v1PatientLogin(email: string, password: string) {
+    const res = await fetch('/api/v1/auth/patient-login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(body?.error?.message || 'Patient sign-in failed');
+      (err as unknown as { status: number; code?: string }).status = res.status;
+      (err as unknown as { status: number; code?: string }).code = body?.error?.code || 'INVALID_CREDENTIALS';
+      throw err;
+    }
+    return body.data;
+  }
+
   async v1Logout() {
     const res = await fetch('/api/v1/auth/logout', {
       method: 'POST',
@@ -116,6 +133,13 @@ class ApiClient {
     return body.data;
   }
 
+  async v1ChangePassword(currentPassword: string, newPassword: string) {
+    return this.request<{ message: string }>('/api/v1/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+  }
+
   async v1GetSession() {
     return this.request<{
       active: boolean;
@@ -130,10 +154,10 @@ class ApiClient {
   async v1GetMe() {
     return this.request<{
       user: { id: string; email: string; firstName: string; lastName: string; isSuperAdmin: boolean; avatarUrl?: string };
-      activeOrganization: { id: string; name: string; currency_code: string; timezone: string; country_code?: string };
+      activeOrganization: { id: string; name: string; currency_code: string; timezone: string; country_code?: string; region?: string | null; city?: string | null; address_line1?: string | null; postal_code?: string | null; phone?: string | null; email?: string | null; onboarding_status?: string; onboarding_step?: number; onboarding_admin_user_id?: string | null };
       roles: { id: string; name: string; code: string }[];
       permissions: string[];
-      availableOrganizations: { id: string; name: string; currency_code: string; timezone: string }[];
+      availableOrganizations: { id: string; name: string; currency_code: string; timezone: string; country_code?: string; region?: string | null; city?: string | null; address_line1?: string | null; postal_code?: string | null; phone?: string | null; email?: string | null; onboarding_status?: string; onboarding_step?: number; onboarding_admin_user_id?: string | null }[];
     }>('/api/v1/me');
   }
 
@@ -144,8 +168,125 @@ class ApiClient {
     });
   }
 
+  async v1GetNotifications() {
+    return this.request<{ notifications: any[]; unreadCount: number }>('/api/v1/notifications');
+  }
+
+  async v1MarkNotificationRead(id: string) {
+    return this.request<{ success: boolean }>(`/api/v1/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
+  }
+
+  async v1MarkAllNotificationsRead() {
+    return this.request<{ success: boolean; count: number }>('/api/v1/notifications/read-all', { method: 'POST' });
+  }
+
+  async v1RegisterClinic(payload: Record<string, unknown>) {
+    return this.request<{
+      organization: { id: string; name: string; slug: string };
+      administrator: { email: string; firstName: string; lastName: string };
+      emailVerificationRequired: boolean;
+      deliveryAccepted: boolean;
+      deliveryProvider: string;
+      message: string;
+      nextStep: string;
+    }>('/api/v1/onboarding/register', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  async v1VerifyEmail(token: string) {
+    return this.request<{ verified: boolean; nextStep: string }>('/api/v1/onboarding/verify-email', {
+      method: 'POST', body: JSON.stringify({ token }),
+    });
+  }
+
+  async v1GetOnboardingState() {
+    return this.request<any>('/api/v1/onboarding/state');
+  }
+
+  async v1ResendVerification() {
+    return this.request<{ accepted: boolean; provider: string; message: string }>('/api/v1/onboarding/email-verification/resend', { method: 'POST' });
+  }
+
+  async v1SaveOnboardingProfile(payload: Record<string, unknown>) {
+    return this.request<{ saved: boolean; message: string }>('/api/v1/onboarding/profile', { method: 'PATCH', body: JSON.stringify(payload) });
+  }
+
+  async v1CompleteOnboardingStep(stepKey: string) {
+    return this.request<{ saved: boolean }>(`/api/v1/onboarding/steps/${encodeURIComponent(stepKey)}/complete`, { method: 'POST' });
+  }
+
+  async v1ActivateOnboarding() {
+    return this.request<{ active: boolean; message: string }>('/api/v1/onboarding/activate', { method: 'POST' });
+  }
+
+  async v1AcceptInvitation(payload: Record<string, unknown>) {
+    return this.request<{ success: boolean; email: string; nextStep: string }>('/api/v1/onboarding/invitations/accept', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  async v1GetInvitations() {
+    return this.request<{ invitations: any[] }>('/api/v1/onboarding/invitations');
+  }
+
+  async v1CreateInvitation(payload: Record<string, unknown>) {
+    return this.request<{ invitation: any; developmentToken?: string; delivery: string }>('/api/v1/onboarding/invitations', { method: 'POST', body: JSON.stringify(payload) });
+  }
+
+  async v1RevokeInvitation(id: string) {
+    return this.request<{ success: boolean }>(`/api/v1/onboarding/invitations/${encodeURIComponent(id)}/revoke`, { method: 'POST' });
+  }
+
+  async v1ResendInvitation(id: string) {
+    return this.request<{ success: boolean; expiresAt: string; developmentToken?: string; delivery: string }>(`/api/v1/onboarding/invitations/${encodeURIComponent(id)}/resend`, { method: 'POST' });
+  }
+
+  async v1CreatePatientPortalInvitation(patientId: string) {
+    return this.request<{ accepted: boolean; expiresAt: string; provider: string }>('/api/v1/patient-portal/invitations', {
+      method: 'POST',
+      body: JSON.stringify({ patientId })
+    });
+  }
+
+  async v1ActivatePatientPortal(payload: { token: string; password: string }) {
+    return this.request<{ activated: boolean; nextStep: string }>('/api/v1/patient-portal/activate', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   async v1GetOrganizations() {
     return this.request<{ organizations: { id: string; name: string; slug: string; currency_code: string; timezone: string; country_code: string }[] }>('/api/v1/organizations');
+  }
+
+  async v1UpdateCurrentOrganization(payload: Record<string, unknown>) {
+    return this.request<{ organization: any }>('/api/v1/organizations/current', {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async v1GetOrganizationUsers() {
+    return this.request<{ users: any[] }>('/api/v1/organizations/current/users');
+  }
+
+  async v1GetSubscriptionPlans() {
+    return this.request<{ plans: any[]; staffCount: number; recommendedPlanCode: string }>('/api/v1/subscriptions/plans');
+  }
+
+  async v1GetCurrentSubscription() {
+    return this.request<{ subscription: any | null; plan: any | null }>('/api/v1/subscriptions/current');
+  }
+
+  async v1StartSubscriptionTrial() {
+    return this.request<{ subscription: any; plan: any; created: boolean }>('/api/v1/subscriptions/trial', { method: 'POST' });
+  }
+
+  async v1CancelSubscription() {
+    return this.request<{ subscription: any }>('/api/v1/subscriptions/cancel', { method: 'POST' });
+  }
+
+  async v1CreateSubscriptionCheckout(planCode: string) {
+    return this.request<{ checkoutUrl: string; providerSessionId: string }>('/api/v1/subscriptions/checkout', {
+      method: 'POST', body: JSON.stringify({ planCode })
+    });
   }
 
   async v1GetMembership(organizationId: string) {
@@ -463,6 +604,29 @@ class ApiClient {
     });
   }
 
+  async v1ActivateDepartment(id: string) {
+    return this.request<{ success: boolean; isActive: boolean }>(`/api/v1/departments/${encodeURIComponent(id)}/activate`, {
+      method: 'POST'
+    });
+  }
+
+  async v1GetDepartmentMembers(id: string) {
+    return this.request<{ department: any; members: any[] }>(`/api/v1/departments/${encodeURIComponent(id)}/members`);
+  }
+
+  async v1AssignDepartmentAdministrator(id: string, userId: string) {
+    return this.request<{ success: boolean; administrator: any }>(`/api/v1/departments/${encodeURIComponent(id)}/administrator`, {
+      method: 'PATCH',
+      body: JSON.stringify({ userId })
+    });
+  }
+
+  async v1RemoveDepartmentMember(departmentId: string, userId: string) {
+    return this.request<{ success: boolean }>(`/api/v1/departments/${encodeURIComponent(departmentId)}/members/${encodeURIComponent(userId)}/remove`, {
+      method: 'POST'
+    });
+  }
+
   // Phase 7: Appointment Types & Specialties
   async v1GetAppointmentTypes() {
     return this.request<{ appointmentTypes: any[]; total: number }>('/api/v1/appointment-types');
@@ -640,6 +804,13 @@ class ApiClient {
         body: JSON.stringify(payload)
       }
     );
+  }
+
+  async updateInvoice(invoiceId: string, payload: Record<string, unknown>) {
+    return this.request<{ invoice: Record<string, unknown> }>(`/api/billing/invoices/${encodeURIComponent(invoiceId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    });
   }
 
   // Patient Portal

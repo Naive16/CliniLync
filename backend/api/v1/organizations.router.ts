@@ -7,8 +7,11 @@
 import { Router, Response } from 'express';
 import { getDatabaseClient } from '../../../database/db.js';
 import { authenticateToken, AuthenticatedRequest } from '../../middleware/auth.js';
+import { originValidationMiddleware } from '../../middleware/csrf.js';
+import { requirePermission } from '../../middleware/require-permission.js';
 import { AuditService } from '../../security/audit.js';
 import { Organization, Role } from '../../types/domain.js';
+import { SUPPORTED_COUNTRY_CODES, SUPPORTED_CURRENCY_CODES } from '../../config/organization-settings.js';
 
 export const v1OrgsRouter = Router();
 
@@ -84,6 +87,65 @@ v1OrgsRouter.get('/current', async (req: AuthenticatedRequest, res: Response): P
       timestamp: new Date().toISOString()
     }
   });
+});
+
+/** PATCH /api/v1/organizations/current - Update authorized clinic settings. */
+v1OrgsRouter.patch('/current', requirePermission('organization.update'), originValidationMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const context = req.securityContext!;
+  const db = getDatabaseClient();
+  const body = req.body || {};
+  const countryCode = typeof body.countryCode === 'string' ? body.countryCode.trim().toUpperCase() : context.activeOrganization.country_code;
+  const currencyCode = typeof body.currencyCode === 'string' ? body.currencyCode.trim().toUpperCase() : context.activeOrganization.currency_code;
+  const clean = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : null;
+
+  if (!SUPPORTED_COUNTRY_CODES.includes(countryCode as typeof SUPPORTED_COUNTRY_CODES[number])) {
+    res.status(400).json({ error: { code: 'INVALID_COUNTRY', message: 'Select a supported country.' } });
+    return;
+  }
+  if (!SUPPORTED_CURRENCY_CODES.includes(currencyCode as typeof SUPPORTED_CURRENCY_CODES[number])) {
+    res.status(400).json({ error: { code: 'INVALID_CURRENCY', message: 'Select a supported ISO currency code.' } });
+    return;
+  }
+
+  const result = await db.query<Organization>(
+    `UPDATE organizations SET country_code = $1, region = $2, city = $3, address_line1 = $4,
+      postal_code = $5, currency_code = $6, timezone = $7, phone = $8, email = $9, updated_at = $10
+     WHERE id = $11 AND is_active = TRUE`,
+    [countryCode, clean(body.region, 100), clean(body.city, 100), clean(body.addressLine1, 255), clean(body.postalCode, 32), currencyCode,
+      clean(body.timezone, 80) || context.activeOrganization.timezone, clean(body.phone, 32), clean(body.email, 255), new Date().toISOString(), context.activeOrganization.id]
+  );
+  if (result.rowCount === 0) {
+    res.status(404).json({ error: { code: 'ORGANIZATION_NOT_FOUND', message: 'Active organization not found.' } });
+    return;
+  }
+  await AuditService.logEvent({
+    organizationId: context.activeOrganization.id,
+    actorId: context.user.id,
+    actorRole: context.roles.map(role => role.code).join(','),
+    action: 'organization.settings_updated',
+    resourceType: 'Organization',
+    resourceId: context.activeOrganization.id,
+    metadata: { fields: ['countryCode', 'region', 'city', 'addressLine1', 'postalCode', 'currencyCode', 'timezone', 'phone', 'email'] },
+    severity: 'INFO', ipAddress: req.ip, userAgent: req.get('user-agent')
+  });
+  const refreshed = await db.query<Organization>('SELECT * FROM organizations WHERE id = $1', [context.activeOrganization.id]);
+  res.json({ data: { organization: refreshed.rows[0] } });
+});
+
+/** GET /api/v1/organizations/current/users - List active staff in the current tenant. */
+v1OrgsRouter.get('/current/users', requirePermission('user.view'), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const context = req.securityContext!;
+  const db = getDatabaseClient();
+  const memberships = await db.query<any>('SELECT * FROM user_organizations WHERE organization_id = $1 AND status = $2', [context.activeOrganization.id, 'ACTIVE']);
+  const users = [];
+  for (const membership of memberships.rows) {
+    const userResult = await db.query<any>('SELECT id, email, first_name, last_name, status, is_super_admin FROM users WHERE id = $1', [membership.user_id]);
+    if (!userResult.rows[0]) continue;
+    const roleResult = await db.query<any>('SELECT code, name FROM roles WHERE id = $1', [membership.role_id]);
+    if (roleResult.rows[0]?.code === 'PATIENT' || userResult.rows[0].is_super_admin) continue;
+    users.push({ ...userResult.rows[0], role_code: roleResult.rows[0]?.code || '', role_name: roleResult.rows[0]?.name || '' });
+  }
+  res.json({ data: { users } });
 });
 
 /**
