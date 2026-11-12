@@ -18,46 +18,46 @@ const modules = [
   {
     icon: UserRound,
     title: 'Patient management',
-    description: 'Keep patient profiles and essential information organised in one place, with a clearer view of each patient record.',
+    description: 'Patient profiles and records in one place.',
     label: 'Patient records',
   },
   {
     icon: Stethoscope,
     title: 'Clinical workflows',
-    description: 'Support clinical teams with structured encounters, medical records, patient problems and care plans.',
+    description: 'Notes, encounters and care plans.',
     label: 'Clinical care',
   },
   {
     icon: CalendarDays,
     title: 'Appointments',
-    description: 'Coordinate appointments and give staff a more organised view of the clinic schedule.',
+    description: 'A clear view of the clinic schedule.',
     label: 'Scheduling',
   },
   {
     icon: Pill,
     title: 'Prescriptions',
-    description: 'Keep prescription workflows connected to the wider patient-care process.',
+    description: 'Connected medication workflows.',
     label: 'Medication',
   },
   {
     icon: CreditCard,
     title: 'Billing',
-    description: 'Bring billing tasks into the same workspace used to manage everyday clinic operations.',
+    description: 'Billing alongside daily clinic operations.',
     label: 'Administration',
   },
   {
     icon: Users,
     title: 'Teams and departments',
-    description: 'Organise healthcare professionals, staff access and departments around your facility.',
+    description: 'Staff, roles and departments.',
     label: 'People & teams',
   },
 ];
 
 const audiences = [
-  { icon: Building2, title: 'Clinic owners', description: 'Get a clearer view of the people, departments and operations that keep your facility running.' },
-  { icon: ClipboardList, title: 'Administrators', description: 'Coordinate staff, organise departments and manage essential administrative workflows.' },
-  { icon: Stethoscope, title: 'Doctors and nurses', description: 'Access the patient information and clinical workflows relevant to your role.' },
-  { icon: HeartPulse, title: 'Patients', description: 'Use a dedicated patient portal for supported patient-facing account experiences.' },
+  { icon: Building2, title: 'Clinic owners', description: 'See your clinic at a glance.' },
+  { icon: ClipboardList, title: 'Administrators', description: 'Manage staff and daily operations.' },
+  { icon: Stethoscope, title: 'Doctors and nurses', description: 'The right patient information, when needed.' },
+  { icon: HeartPulse, title: 'Patients', description: 'A dedicated patient portal.' },
 ];
 
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
@@ -113,37 +113,37 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
 
       <main>
         <section className="relative overflow-hidden bg-slate-50">
-          <div className="pointer-events-none absolute -right-28 -top-32 h-96 w-96 rounded-full bg-teal-100/70 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-sky-100/70 blur-3xl" />
+          <div className="pointer-events-none absolute -right-28 -top-32 h-96 w-96 rounded-full bg-emerald-50/70 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-slate-100/70 blur-3xl" />
           <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12 lg:py-28">
             <div className="max-w-2xl">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white px-3.5 py-2 text-xs font-semibold tracking-wide text-teal-800 shadow-sm">
                 <span className="h-2 w-2 rounded-full bg-teal-600" />
-                A connected platform for healthcare teams
+                Healthcare, connected
               </div>
               <h1 className="text-4xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-                Better healthcare operations.
-                <span className="mt-2 block text-teal-700">One connected platform.</span>
+                Clinic management,
+                <span className="mt-2 block text-teal-700">made simpler.</span>
               </h1>
               <p className="mt-7 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
-                Clinilync helps healthcare facilities organise patient information, coordinate teams and manage everyday clinic operations in one secure workspace.
+                Patients, appointments and clinical work in one place.
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <button type="button" onClick={() => go('/register')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-teal-900/10 transition hover:-translate-y-0.5 hover:bg-teal-800">
-                  Get started with Clinilync <ArrowRight className="h-4 w-4" />
+                  Get started <ArrowRight className="h-4 w-4" />
                 </button>
                 <a href="#platform" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50">
-                  Explore the platform
+                  Explore features
                 </a>
               </div>
               <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-medium text-slate-500">
-                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Connected clinic workflows</span>
-                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Role-aware access</span>
+                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Connected workflows</span>
+                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Role-based access</span>
               </div>
             </div>
 
             <div className="relative mx-auto w-full max-w-xl">
-              <div className="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-teal-100 via-sky-50 to-white blur-xl" />
+              <div className="absolute -inset-5 rounded-[2rem] bg-slate-100 blur-xl" />
               <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
                 <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
                   <div className="flex items-center gap-2.5">
@@ -193,15 +193,15 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">The Clinilync platform</div>
-              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">The essential parts of clinic operations, working together.</h2>
-              <p className="mt-5 text-base leading-7 text-slate-600">Bring patient information, clinical work and facility administration into a shared operating environment.</p>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Everything your clinic needs.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">One workspace for your daily operations.</p>
             </div>
             <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {modules.map((module, index) => (
                 <article key={module.title} className="group rounded-2xl border border-slate-200 bg-white p-6 transition duration-200 hover:-translate-y-1 hover:border-teal-200 hover:shadow-xl hover:shadow-slate-900/5">
                   <div className="flex items-center justify-between">
                     <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700 transition group-hover:bg-teal-700 group-hover:text-white"><module.icon className="h-5 w-5" /></span>
-                    <span className="text-xs font-semibold text-slate-300">0{index + 1}</span>
+                    <span className="text-xs font-semibold text-slate-600">0{index + 1}</span>
                   </div>
                   <div className="mt-6 text-[10px] font-bold uppercase tracking-wider text-teal-700">{module.label}</div>
                   <h3 className="mt-2 text-lg font-bold text-slate-900">{module.title}</h3>
@@ -216,8 +216,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">A connected patient journey</div>
-              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">A clearer journey from first contact to follow-up.</h2>
-              <p className="mt-5 text-base leading-7 text-slate-600">Clinilync brings the people and information involved in everyday care into one organised environment, helping teams work with better continuity.</p>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">One connected patient journey.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">Keep patient care and clinic operations connected.</p>
               <button type="button" onClick={() => go('/register')} className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-teal-800 hover:text-teal-900">Explore Clinilync <ArrowRight className="h-4 w-4" /></button>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -240,8 +240,8 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="max-w-2xl">
               <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Designed around your team</div>
-              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">One platform. Different roles. Shared direction.</h2>
-              <p className="mt-5 text-base leading-7 text-slate-600">Give each member of your healthcare team a clearer place in the work that keeps your facility running.</p>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">One platform for your whole team.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">Useful tools for every role.</p>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {audiences.map((person)=>(
@@ -255,18 +255,18 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           </div>
         </section>
 
-        <section id="how-it-works" className="scroll-mt-24 bg-slate-900 py-20 text-white sm:py-24">
+        <section id="how-it-works" className="scroll-mt-24 bg-slate-50 py-20 text-slate-900 sm:py-24">
           <div className="mx-auto max-w-7xl px-5 sm:px-8">
             <div className="mx-auto max-w-2xl text-center">
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-300">Getting started</div>
-              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">A straightforward start for your facility.</h2>
-              <p className="mt-5 text-base leading-7 text-slate-300">Set up your organisation, configure your clinic and bring your team into one workspace.</p>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Getting started</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Set up in three steps.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-300">Create your clinic. Invite your team. Get started.</p>
             </div>
             <div className="mt-12 grid gap-8 md:grid-cols-3">
               {[
-                {number:'01',title:'Create your organisation',copy:'Register your facility and establish your organisation workspace.'},
-                {number:'02',title:'Set up your clinic',copy:'Add your facility details and configure the departments you need.'},
-                {number:'03',title:'Bring in your team',copy:'Invite colleagues, assign appropriate access and begin organising your workflows.'},
+                {number:'01',title:'Create your organisation',copy:'Register your clinic.'},
+                {number:'02',title:'Set up your clinic',copy:'Add your departments.'},
+                {number:'03',title:'Bring in your team',copy:'Invite your team.'},
               ].map((step)=>(
                 <div key={step.number} className="border-t border-slate-700 pt-6">
                   <div className="text-sm font-bold tracking-widest text-teal-300">{step.number}</div>
@@ -286,27 +286,27 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
             <div>
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><ShieldCheck className="h-7 w-7" /></div>
               <div className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Security by design</div>
-              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Patient information deserves careful handling.</h2>
-              <p className="mt-5 text-base leading-7 text-slate-600">Clinilync is built around organisation-level data separation, role-aware permissions and recorded activity so access to sensitive workflows can be managed responsibly.</p>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Patient data, handled responsibly.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">Role-based access, organisation separation and activity records.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 p-6"><LockKeyhole className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Controlled access</h3><p className="mt-2 text-sm leading-6 text-slate-600">Role and resource permissions help ensure people access only the information and actions assigned to them.</p></div>
-              <div className="rounded-2xl border border-slate-200 p-6"><ShieldCheck className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Organisation separation</h3><p className="mt-2 text-sm leading-6 text-slate-600">Organisation-aware data boundaries are part of the platform's underlying design.</p></div>
-              <div className="rounded-2xl border border-slate-200 p-6"><FileHeart className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Accountability</h3><p className="mt-2 text-sm leading-6 text-slate-600">Auditable activity supports visibility into important actions performed in the system.</p></div>
-              <div className="rounded-2xl border border-slate-200 p-6"><Users className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Team-based workflows</h3><p className="mt-2 text-sm leading-6 text-slate-600">Access can be structured around the responsibilities of each member of your facility.</p></div>
+              <div className="rounded-2xl border border-slate-200 p-6"><LockKeyhole className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Controlled access</h3><p className="mt-2 text-sm leading-6 text-slate-600">Access follows each person's role.</p></div>
+              <div className="rounded-2xl border border-slate-200 p-6"><ShieldCheck className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Organisation separation</h3><p className="mt-2 text-sm leading-6 text-slate-600">Each organisation has its own data boundaries.</p></div>
+              <div className="rounded-2xl border border-slate-200 p-6"><FileHeart className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Accountability</h3><p className="mt-2 text-sm leading-6 text-slate-600">Important activity is recorded.</p></div>
+              <div className="rounded-2xl border border-slate-200 p-6"><Users className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Team-based workflows</h3><p className="mt-2 text-sm leading-6 text-slate-600">Permissions match team responsibilities.</p></div>
             </div>
           </div>
         </section>
 
         <section className="px-5 pb-20 sm:px-8 sm:pb-24">
-          <div className="mx-auto max-w-7xl overflow-hidden rounded-3xl bg-teal-800 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
+          <div className="mx-auto max-w-7xl overflow-hidden rounded-3xl bg-slate-900 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
             <div className="mx-auto max-w-2xl">
-              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-100">Move your clinic forward</div>
-              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Bring your healthcare operations together.</h2>
-              <p className="mt-5 text-base leading-7 text-teal-50">Create your organisation workspace and explore a more connected way to manage your facility.</p>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Get started</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Your clinic, in sync.</h2>
+              <p className="mt-5 text-base leading-7 text-teal-50">Bring your team onto Clinilync.</p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <button type="button" onClick={() => go('/register')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-teal-900 transition hover:bg-teal-50">Get started <ArrowRight className="h-4 w-4" /></button>
-                <button type="button" onClick={() => go('/login')} className="rounded-xl border border-teal-300 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-teal-700">Already have an account? Sign in</button>
+                <button type="button" onClick={() => go('/login')} className="rounded-xl border border-teal-300 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-teal-700">Sign in</button>
               </div>
             </div>
           </div>

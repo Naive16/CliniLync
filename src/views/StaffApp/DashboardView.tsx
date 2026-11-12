@@ -13,7 +13,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-  const { user, activeOrganization, hasPermission } = useAuth();
+  const { activeOrganization, hasPermission } = useAuth();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patientCount, setPatientCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -50,11 +50,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   return (
     <div className="cl-ui-page space-y-6">
       <PageHeader
-        title="Clinical Command Center"
-        subtitle={<><span>{activeOrganization?.name}</span><span aria-hidden="true"> · </span><span className="font-mono">{activeOrganization?.timezone}</span><span aria-hidden="true"> · </span><span>Signed in as {user?.firstName} {user?.lastName}</span></>}
+        title="Dashboard"
+        subtitle={<span>{activeOrganization?.name}</span>}
         actions={<>
-          {hasPermission('patient.create') && <Button variant="primary" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onNavigate('/app/patients')}>Intake Patient</Button>}
-          {hasPermission('clinical.create') && <Button variant="secondary" icon={<Stethoscope className="w-3.5 h-3.5" />} onClick={() => onNavigate('/app/clinical')}>Write Clinical Note</Button>}
+          {hasPermission('patient.create') && <Button variant="primary" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => onNavigate('/app/patients')}>Add patient</Button>}
+          {hasPermission('clinical.create') && <Button variant="secondary" icon={<Stethoscope className="w-3.5 h-3.5" />} onClick={() => onNavigate('/app/clinical')}>Clinical note</Button>}
         </>}
       />
 
@@ -62,24 +62,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card className="p-4 space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Registered Patients</span>
+            <span>Patients</span>
             <Users className="w-4 h-4 text-slate-400" />
           </div>
           <div className="text-2xl font-bold text-slate-900 tabular-nums">
             {loading ? '—' : patientCount}
           </div>
-          <div className="text-[11px] text-teal-700">Organization Roster</div>
+          <div className="text-[11px] text-teal-700">All registered patients</div>
         </Card>
 
         <Card className="p-4 space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Today's Queue</span>
+            <span>Appointments today</span>
             <Calendar className="w-4 h-4 text-slate-400" />
           </div>
           <div className="text-2xl font-bold text-slate-900 tabular-nums">
             {loading ? '—' : appointments.length}
           </div>
-          <div className="text-[11px] text-teal-700">Scheduled Consultations</div>
+          <div className="text-[11px] text-teal-700">Scheduled visits</div>
         </Card>
 
         <Card className="p-4 space-y-1">
@@ -90,18 +90,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           <div className="text-2xl font-bold text-slate-900 tabular-nums">
             {loading ? '—' : appointments.filter(a => a.status === 'CHECKED_IN').length}
           </div>
-          <div className="text-[11px] text-amber-700">Waiting for Triage / Doctor</div>
+          <div className="text-[11px] text-amber-700">Awaiting consultation</div>
         </Card>
 
         <Card className="p-4 space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Active Currency</span>
+            <span>Currency</span>
             <Receipt className="w-4 h-4 text-slate-400" />
           </div>
           <div className="text-2xl font-bold text-slate-900 font-mono">
             {activeOrganization?.currency_code || 'GBP'}
           </div>
-          <div className="text-[11px] text-slate-500">Jurisdiction Compliant</div>
+          <div className="text-[11px] text-slate-500">Organisation setting</div>
         </Card>
       </div>
 
@@ -109,8 +109,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
       <Card className="cl-ui-table-container">
         <div className="cl-ui-card-header flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Today's Appointment Schedule & Triage Queue</h2>
-            <p className="text-xs text-slate-500">Patient → Check-in → Consultation → Sign-off</p>
+            <h2 className="text-sm font-semibold text-slate-900">Appointments</h2>
+            
           </div>
           <Button variant="link" icon={<ArrowUpRight className="w-3.5 h-3.5" />} onClick={() => onNavigate('/app/appointments')}>View Full Calendar</Button>
         </div>

@@ -700,3 +700,156 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .clinilync-content input, .clinilync-content select, .clinilync-content textarea { max-width: 100%; }
 }
 
+
+
+/* -------------------------------------------------------------------------
+   Clinilync refresh — Medoria-inspired neutral clinical workspace
+   White / charcoal / soft grey with restrained emerald accents.
+   ------------------------------------------------------------------------- */
+:root {
+  --cl-white: #FFFFFF;
+  --cl-blue-light: #F5F6F5;
+  --cl-blue-sky: #D1FAE5;
+  --cl-blue-dark: #047857;
+  --cl-blue-deep: #065F46;
+  --cl-navy: #171A19;
+  --cl-navy-mid: #292E2C;
+  --cl-slate: #626B67;
+  --cl-slate-light: #89918D;
+  --cl-border: #E7EAE8;
+  --cl-surface: #F7F8F7;
+  --cl-success: #059669;
+  --cl-success-bg: #ECFDF5;
+  --cl-warning: #B7791F;
+  --cl-warning-bg: #FFFBEB;
+  --cl-danger: #DC2626;
+  --cl-danger-bg: #FEF2F2;
+  --cl-info: #475569;
+  --cl-info-bg: #F1F5F9;
+  --cl-shadow-sm: 0 1px 2px rgba(16,24,20,.045);
+  --cl-shadow-md: 0 8px 24px rgba(16,24,20,.075);
+  --cl-focus-ring: 0 0 0 3px rgba(16,185,129,.18);
+}
+
+@layer base {
+  body { color: #202522; background: #F7F8F7; }
+}
+
+:where(.bg-slate-50), :where(.bg-slate-100) { background-color: #F5F6F5; }
+:where(.bg-slate-200) { background-color: #E9ECEA; }
+:where(.bg-slate-900), :where(.bg-slate-800) { background-color: #171A19; }
+:where(.text-slate-900), :where(.text-slate-950), :where(.text-slate-800), :where(.text-slate-700) { color: #202522; }
+:where(.text-slate-600) { color: #59625D; }
+:where(.text-slate-500), :where(.text-slate-400) { color: #7B847F; }
+:where(.border-slate-100), :where(.border-slate-200), :where(.border-slate-300) { border-color: #E7EAE8; }
+:where(.bg-teal-50), :where([class~="bg-teal-50/50"]), :where(.bg-teal-100) { background-color: #ECFDF5; }
+:where(.bg-teal-600), :where(.bg-teal-700), :where(.bg-teal-800), :where(.bg-teal-900) { background-color: #171A19; }
+:where(.text-teal-600), :where(.text-teal-700), :where(.text-teal-800), :where(.text-teal-900), :where(.text-teal-950) { color: #047857; }
+:where(.border-teal-100), :where(.border-teal-200), :where(.border-teal-300), :where(.border-teal-400), :where(.border-teal-500), :where(.border-teal-600), :where(.border-teal-700) { border-color: #A7F3D0; }
+:where([class~="hover:bg-teal-800"]:hover), :where([class~="hover:bg-teal-700"]:hover) { background-color: #292E2C; }
+:where([class~="hover:text-teal-800"]:hover), :where([class~="hover:text-teal-900"]:hover) { color: #047857; }
+
+.clinilync-shell { background: #F7F8F7; color: #202522; }
+.clinilync-sidebar {
+  background: #FFFFFF;
+  color: #202522;
+  border-right: 1px solid #E7EAE8;
+  box-shadow: 1px 0 0 rgba(16,24,20,.015);
+}
+.clinilync-sidebar-brand-row { border-bottom-color: #ECEFEC; }
+.clinilync-sidebar-brand { color: #171A19; }
+.clinilync-sidebar-brand strong { color: #171A19; font-size: 18px; letter-spacing: -.045em; }
+.clinilync-sidebar-brand small { color: #89918D; }
+.clinilync-brand-mark, .clinilync-rail-brand {
+  color: #047857;
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+}
+.clinilync-sidebar-section-label { color: #929A95; }
+.clinilync-nav-item {
+  color: #59625D;
+  border-left: 0;
+  border-radius: 7px;
+  min-height: 39px;
+  font-size: 12px;
+}
+.clinilync-nav-item:hover:not(:disabled) { color: #171A19; background: #F5F6F5; }
+.clinilync-nav-item.is-active {
+  color: #FFFFFF;
+  background: #171A19;
+  border-left-color: transparent;
+  font-weight: 650;
+}
+.clinilync-nav-item.is-active .clinilync-nav-icon { color: #FFFFFF; }
+.clinilync-nav-item.is-locked { color: #B5BCB8; }
+.clinilync-nav-lock { color: #A1A9A4; }
+.clinilync-sidebar-user { border-top-color: #ECEFEC; }
+.clinilync-sidebar-user-copy strong { color: #202522; }
+.clinilync-sidebar-user-copy small { color: #89918D; }
+.clinilync-avatar { color: #047857; background: #ECFDF5; }
+.clinilync-sidebar-account-organization { border-top-color: #ECEFEC; }
+.clinilync-sidebar-context-label { color: #929A95; }
+.clinilync-sidebar-org-name { color: #343B36; }
+.clinilync-sidebar-org-select { color: #343B36; background: #F7F8F7; border-color: #E7EAE8; }
+.clinilync-sidebar-role-toggle, .clinilync-sidebar-signout { color: #59625D; }
+.clinilync-sidebar-signout:hover { color: #171A19; background: #F5F6F5; }
+.clinilync-sidebar-collapse-toggle { color: #7B847F; }
+.clinilync-tablet-rail { background: #FFFFFF; border-right: 1px solid #E7EAE8; }
+.clinilync-tablet-rail .clinilync-nav-item { color: #59625D; }
+.clinilync-tablet-rail .clinilync-nav-item.is-active { color: #FFFFFF; }
+.clinilync-mobile-drawer { background: #FFFFFF; color: #202522; }
+.clinilync-mobile-drawer .clinilync-nav-item { color: #59625D; }
+.clinilync-mobile-drawer .clinilync-nav-item.is-active { color: #FFFFFF; }
+
+.clinilync-topbar {
+  background: rgba(255,255,255,.96);
+  border-bottom-color: #E7EAE8;
+  backdrop-filter: blur(12px);
+}
+.clinilync-topbar-heading h1 { color: #171A19; font-size: 16px; font-weight: 650; letter-spacing: -.025em; }
+.clinilync-topbar-search { color: #7B847F; background: #F7F8F7; border-color: #E7EAE8; border-radius: 8px; }
+.clinilync-topbar-search:focus-within { border-color: #A7F3D0; box-shadow: 0 0 0 3px rgba(16,185,129,.10); }
+.clinilync-topbar-search input { color: #202522; }
+.clinilync-icon-button { color: #59625D; }
+.clinilync-icon-button:hover { color: #171A19; background: #F5F6F5; }
+.clinilync-notification-panel { color: #202522; border-color: #E7EAE8; box-shadow: 0 16px 34px rgba(16,24,20,.10); }
+.clinilync-notification-panel-header { border-bottom-color: #E7EAE8; }
+.clinilync-notification-panel-header button { color: #047857; }
+
+.cl-ui-page { width: min(1440px, 100%); padding: 28px 30px 40px; }
+.cl-ui-page-header { border-bottom-color: #E7EAE8; }
+.cl-ui-page-header h1 { color: #171A19; font-size: 23px; font-weight: 700; letter-spacing: -.04em; }
+.cl-ui-page-header p { color: #7B847F; }
+.cl-ui-section-heading h2 { color: #202522; }
+.cl-ui-card, .bg-white.border-slate-200, .bg-white[class~="border-slate-200/80"] {
+  border-color: #E7EAE8;
+  border-radius: 11px;
+  box-shadow: 0 1px 2px rgba(16,24,20,.035);
+}
+.cl-ui-card-header { border-bottom-color: #ECEFEC; }
+.cl-ui-table-container thead, .clinilync-content thead { background: #F7F8F7; color: #737C76; }
+.cl-ui-table-container th { color: #737C76; font-weight: 650; }
+.cl-ui-table-container tbody tr:hover, .clinilync-content tbody tr:hover { background: #FAFBFA; }
+.cl-ui-button-primary { color: #FFFFFF; background: #171A19; box-shadow: none; }
+.cl-ui-button-primary:hover:not(:disabled) { background: #292E2C; }
+.cl-ui-button-secondary { color: #343B36; background: #FFFFFF; border-color: #E1E5E2; }
+.cl-ui-button-secondary:hover:not(:disabled) { background: #F7F8F7; border-color: #C9D0CB; }
+.cl-ui-button-quiet { color: #047857; background: #ECFDF5; border-color: #D1FAE5; }
+.cl-ui-button-quiet:hover:not(:disabled) { background: #D1FAE5; }
+.clinilync-content input:not([type="checkbox"]):not([type="radio"]), .clinilync-content select, .clinilync-content textarea {
+  color: #202522;
+  border-color: #E1E5E2;
+  border-radius: 8px;
+}
+.clinilync-content input:not([type="checkbox"]):not([type="radio"]):focus, .clinilync-content select:focus, .clinilync-content textarea:focus {
+  border-color: #6EE7B7;
+  box-shadow: 0 0 0 3px rgba(16,185,129,.12);
+}
+.clinilync-content label { color: #59625D; }
+.cl-ui-eyebrow { color: #047857; }
+.cl-ui-status-info { color: #475569; background: #F1F5F9; border-color: #E2E8F0; }
+
+@media (max-width: 767px) {
+  .cl-ui-page { padding: 20px 16px 30px; }
+  .cl-ui-page-header { align-items: flex-start; flex-direction: column; gap: 14px; }
+}
