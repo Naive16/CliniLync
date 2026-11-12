@@ -48,8 +48,8 @@ const OnboardingIntro: React.FC<{ invitation?: boolean }> = ({ invitation = fals
   </section>
 );
 
-const OnboardingShell: React.FC<{ children: React.ReactNode; invitation?: boolean }> = ({ children, invitation }) => (
-  <div className="cl-onboarding-page">
+const OnboardingShell: React.FC<{ children: React.ReactNode; invitation?: boolean; registration?: boolean }> = ({ children, invitation, registration }) => (
+  <div className={`cl-onboarding-page${registration ? ' is-registration' : ''}`}>
     <div className="cl-onboarding-shell">
       <OnboardingIntro invitation={invitation} />
       <section className="cl-onboarding-main">{children}</section>
@@ -149,7 +149,7 @@ export const ClinicOnboardingView: React.FC<ClinicOnboardingViewProps> = ({ onNa
   };
 
   return (
-    <OnboardingShell>
+    <OnboardingShell registration>
       <div className="cl-onboarding-form-header">
         <p className="cl-onboarding-eyebrow">Set up access</p>
         <h2>Register your clinic</h2>
