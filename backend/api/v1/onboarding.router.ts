@@ -412,6 +412,74 @@ v1OnboardingRouter.post('/email-verification/resend', authRateLimiter, originVal
   });
 });
 
+/** Create a department during clinic onboarding without opening the clinical workspace. */
+v1OnboardingRouter.post('/departments', requirePermission(Permissions.ORGANIZATION_UPDATE), originValidationMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  if (!onboardingAdministratorOnly(req, res)) return;
+  const context = req.securityContext!;
+  const name = cleanText(req.body?.name, 120);
+  const code = cleanText(req.body?.code, 24).toUpperCase();
+  if (name.length < 2 || !/^[A-Z0-9_]+$/.test(code)) {
+    validationError(res, 'Enter a department name and a valid department code.');
+    return;
+  }
+
+  const db = getDatabaseClient();
+  const duplicate = await db.query(
+    'SELECT id FROM departments WHERE organization_id = $1 AND code = $2',
+    [context.activeOrganization.id, code],
+  );
+  if (duplicate.rows.length > 0) {
+    res.status(409).json({ error: { code: 'DUPLICATE_CODE', message: `Department code ${code} already exists in this clinic.` } });
+    return;
+  }
+
+  const id = `dept_${crypto.randomUUID().replaceAll('-', '').slice(0, 20)}`;
+  const now = new Date().toISOString();
+  const department = {
+    id,
+    organization_id: context.activeOrganization.id,
+    name,
+    code,
+    description: null,
+    parent_department_id: null,
+    head_provider_id: null,
+    email: null,
+    phone: null,
+    is_active: true,
+    created_at: now,
+    updated_at: now,
+  };
+
+  await db.transaction(async (tx) => {
+    await tx.query(
+      `INSERT INTO departments
+        (id, organization_id, name, code, description, parent_department_id, head_provider_id, email, phone, is_active, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, NULL, NULL, NULL, NULL, NULL, TRUE, $5, $5)`,
+      [id, context.activeOrganization.id, name, code, now],
+    );
+    await markOnboardingStep(tx, context.activeOrganization.id, OnboardingStep.DEPARTMENTS, context.user.id);
+    await tx.query(
+      'UPDATE organizations SET onboarding_status = $1, onboarding_step = $2, updated_at = $3 WHERE id = $4',
+      [OnboardingStatus.SETUP_IN_PROGRESS, 5, now, context.activeOrganization.id],
+    );
+  });
+
+  await AuditService.logEvent({
+    organizationId: context.activeOrganization.id,
+    actorId: context.user.id,
+    actorRole: context.roles.map((role) => role.code).join(','),
+    action: 'department.created_during_onboarding',
+    resourceType: 'Department',
+    resourceId: id,
+    metadata: { name, code },
+    severity: 'INFO',
+    ipAddress: req.ip,
+    userAgent: req.get('user-agent'),
+  });
+
+  res.status(201).json({ data: { department }, meta: { message: 'Department saved during clinic onboarding.' } });
+});
+
 v1OnboardingRouter.patch('/profile', requirePermission(Permissions.ORGANIZATION_UPDATE), originValidationMiddleware, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   if (!onboardingAdministratorOnly(req, res)) return;
   const context = req.securityContext!;
