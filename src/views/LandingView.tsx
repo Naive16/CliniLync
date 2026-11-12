@@ -7,8 +7,7 @@ import React from 'react';
 import {
   Activity, ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2,
   ClipboardList, CreditCard, FileHeart, HeartPulse, LockKeyhole,
-  Menu, Pill, ShieldCheck, Stethoscope, Users, X, Building2,
-  BarChart3, UserRound, Clock3
+  Menu, Pill, ShieldCheck, Stethoscope, Users, X, Building2, UserRound
 } from 'lucide-react';
 
 interface LandingViewProps {
