@@ -431,12 +431,6 @@ export const PatientsView: React.FC<PatientsViewProps> = ({ currentPath = '/app/
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] px-2.5 py-1 bg-teal-50 border border-teal-200 text-teal-800 rounded-full font-medium flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
-              <span>RLAC Protected</span>
-            </span>
-          </div>
         </div>
 
         {intakeError && (
