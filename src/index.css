@@ -742,12 +742,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 :where(.text-slate-600) { color: #59625D; }
 :where(.text-slate-500), :where(.text-slate-400) { color: #7B847F; }
 :where(.border-slate-100), :where(.border-slate-200), :where(.border-slate-300) { border-color: #E7EAE8; }
-:where(.bg-teal-50), :where(.bg-teal-50\\/50), :where(.bg-teal-100) { background-color: #ECFDF5; }
+:where(.bg-teal-50), :where([class~="bg-teal-50/50"]), :where(.bg-teal-100) { background-color: #ECFDF5; }
 :where(.bg-teal-600), :where(.bg-teal-700), :where(.bg-teal-800), :where(.bg-teal-900) { background-color: #171A19; }
 :where(.text-teal-600), :where(.text-teal-700), :where(.text-teal-800), :where(.text-teal-900), :where(.text-teal-950) { color: #047857; }
 :where(.border-teal-100), :where(.border-teal-200), :where(.border-teal-300), :where(.border-teal-400), :where(.border-teal-500), :where(.border-teal-600), :where(.border-teal-700) { border-color: #A7F3D0; }
-:where(.hover\\:bg-teal-800:hover), :where(.hover\\:bg-teal-700:hover) { background-color: #292E2C; }
-:where(.hover\\:text-teal-800:hover), :where(.hover\\:text-teal-900:hover) { color: #047857; }
+:where([class~="hover:bg-teal-800"]:hover), :where([class~="hover:bg-teal-700"]:hover) { background-color: #292E2C; }
+:where([class~="hover:text-teal-800"]:hover), :where([class~="hover:text-teal-900"]:hover) { color: #047857; }
 
 .clinilync-shell { background: #F7F8F7; color: #202522; }
 .clinilync-sidebar {
@@ -821,7 +821,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .cl-ui-page-header h1 { color: #171A19; font-size: 23px; font-weight: 700; letter-spacing: -.04em; }
 .cl-ui-page-header p { color: #7B847F; }
 .cl-ui-section-heading h2 { color: #202522; }
-.cl-ui-card, .bg-white.border-slate-200, .bg-white.border-slate-200\\/80 {
+.cl-ui-card, .bg-white.border-slate-200, .bg-white[class~="border-slate-200/80"] {
   border-color: #E7EAE8;
   border-radius: 11px;
   box-shadow: 0 1px 2px rgba(16,24,20,.035);
