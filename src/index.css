@@ -1009,3 +1009,172 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .cl-login-label-row { align-items: flex-start; }
   .cl-login-forgot { font-size: 11px; }
 }
+
+
+/* Registration page: simplify the first impression and reduce mobile density. */
+@media (max-width: 767px) {
+  .cl-onboarding-page.is-registration {
+    min-height: 100svh;
+    min-height: 100dvh;
+    align-items: flex-start;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    background: #FFFFFF;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-shell {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 520px;
+    min-height: 0;
+    margin: 0 auto;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #FFFFFF;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-intro {
+    display: block;
+    padding: 8px 0 20px;
+    overflow: visible;
+    color: var(--cl-navy);
+    background: #FFFFFF;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-intro::before,
+  .cl-onboarding-page.is-registration .cl-onboarding-intro::after,
+  .cl-onboarding-page.is-registration .cl-onboarding-benefits,
+  .cl-onboarding-page.is-registration .cl-onboarding-intro-note {
+    display: none;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-brand {
+    gap: 9px;
+    color: var(--cl-navy);
+    font-size: 19px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-brand .clinilync-brand-mark {
+    width: 36px;
+    height: 36px;
+    color: #FFFFFF;
+    background: var(--cl-navy);
+    border-radius: 10px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-intro-copy {
+    max-width: none;
+    margin: 20px 0 0;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-intro .cl-onboarding-eyebrow {
+    margin-bottom: 7px;
+    color: var(--cl-blue-dark);
+    font-size: 10px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-intro h1 {
+    max-width: none;
+    color: var(--cl-navy);
+    font-size: clamp(25px, 7vw, 30px);
+    line-height: 1.12;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-intro-copy > p:not(.cl-onboarding-eyebrow) {
+    max-width: 42ch;
+    margin-top: 8px;
+    color: #64748B;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-main {
+    display: block;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-form-header {
+    margin: 0 0 18px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-form-header .cl-onboarding-eyebrow {
+    display: none;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-form-header h2 {
+    font-size: 18px;
+    letter-spacing: -.02em;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-form-header > p:last-child {
+    margin-top: 5px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-form {
+    gap: 18px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 10px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-field-full {
+    grid-column: 1 / -1;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-label {
+    margin-bottom: 6px;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-input {
+    min-height: 46px;
+    padding: 10px;
+    border-radius: 9px;
+    font-size: 14px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-input-with-icon {
+    padding-left: 35px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-input-icon {
+    left: 10px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-password-toggle {
+    right: 5px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-helper {
+    margin-top: 5px;
+    font-size: 11px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-submit {
+    min-height: 50px;
+    font-size: 14px;
+  }
+
+  .cl-onboarding-page.is-registration .cl-onboarding-signin {
+    margin: 0 0 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 380px) {
+  .cl-onboarding-page.is-registration { padding-inline: 13px; }
+  .cl-onboarding-page.is-registration .cl-onboarding-fields {
+    gap: 13px 8px;
+  }
+  .cl-onboarding-page.is-registration .cl-onboarding-label {
+    font-size: 10px;
+  }
+}
