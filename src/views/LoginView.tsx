@@ -110,6 +110,24 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate }) => {
             </div>
           </div>
         </div>
+
+        <aside className="cl-login-desktop-intro" aria-label="Clinilync workspace overview">
+          <div className="cl-login-desktop-brand">
+            <span className="cl-login-desktop-brand-mark"><Activity size={18} /></span>
+            <span>Clinilync</span>
+          </div>
+          <div className="cl-login-desktop-intro-copy">
+            <span className="cl-login-desktop-eyebrow">THE CLINIC WORKSPACE</span>
+            <h2>Better connected care starts here.</h2>
+            <p>Bring patient records, appointments and everyday clinic operations together in one clear workspace.</p>
+            <div className="cl-login-desktop-highlights">
+              <div><span className="cl-login-highlight-number">01</span><span><strong>Patient records</strong><small>Keep essential patient information organised.</small></span></div>
+              <div><span className="cl-login-highlight-number">02</span><span><strong>Clinic operations</strong><small>Stay on top of appointments and team workflows.</small></span></div>
+              <div><span className="cl-login-highlight-number">03</span><span><strong>One workspace</strong><small>Move through daily tasks with more clarity.</small></span></div>
+            </div>
+          </div>
+          <p className="cl-login-desktop-footnote">A connected workspace for your care team.</p>
+        </aside>
       </section>
 
       {showForgotModal && (
