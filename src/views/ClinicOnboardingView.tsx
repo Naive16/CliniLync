@@ -365,8 +365,7 @@ export const ClinicSetupView: React.FC<ClinicSetupViewProps> = ({ onNavigate, on
 
   const createDepartment = (name: string) => run(async () => {
     const code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24) || `DEPT_${Date.now()}`;
-    await api.v1CreateDepartment({ name, code });
-    await api.v1CompleteOnboardingStep('departments');
+    await api.v1CreateOnboardingDepartment({ name, code });
   }, 'Department saved.');
   const saveProfile = () => run(async () => {
     await api.v1SaveOnboardingProfile(profile);
