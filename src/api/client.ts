@@ -202,6 +202,13 @@ class ApiClient {
     return this.request<any>('/api/v1/onboarding/state');
   }
 
+  async v1CreateOnboardingDepartment(payload: { name: string; code: string }) {
+    return this.request<{ department: any }>('/api/v1/onboarding/departments', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   async v1ResendVerification() {
     return this.request<{ accepted: boolean; provider: string; message: string }>('/api/v1/onboarding/email-verification/resend', { method: 'POST' });
   }
