@@ -2,7 +2,7 @@ import React from 'react';
 import { Activity, ArrowRight } from 'lucide-react';
 interface LandingViewProps { onNavigate: (path: string) => void; }
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => (
-  <div className="min-h-screen bg-white text-slate-900">
+  <div className="clinilync-public-page min-h-screen bg-white text-slate-900">
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <button type="button" onClick={() => onNavigate('/')} className="flex items-center gap-2.5 text-left" aria-label="Clinilync home"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-700 text-white"><Activity className="h-5 w-5" /></span><span className="text-xl font-extrabold tracking-tight text-slate-900">clinilync<span className="text-teal-700">.</span></span></button>
