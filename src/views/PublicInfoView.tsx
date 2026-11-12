@@ -20,7 +20,7 @@ const pageContent = {
 
 export const PublicInfoView: React.FC<Props> = ({ page, onNavigate }) => {
   const content = pageContent[page];
-  return <div className="min-h-screen bg-white text-slate-900">
+  return <div className="clinilync-public-page min-h-screen bg-white text-slate-900">
     <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
       <button type="button" onClick={() => onNavigate('/')} className="flex items-center gap-2.5"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-700 text-white"><Activity size={20}/></span><span className="text-xl font-extrabold tracking-tight">clinilync<span className="text-teal-700">.</span></span></button>
       <nav className="hidden flex-wrap items-center gap-6 md:flex" aria-label="Main navigation">
