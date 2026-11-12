@@ -34,7 +34,8 @@ export class MigrationEngine {
   }
 
   async getAppliedMigrations(): Promise<string[]> {
-    await this.initMigrationTable();
+    // Hosted startup must be read-only: the migration ledger is provisioned
+    // out-of-band and must already exist. Never issue CREATE TABLE at boot.
     const result = await this.db.query<{ name: string }>(`
       SELECT name FROM _schema_migrations ORDER BY id ASC
     `);
