@@ -108,7 +108,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onNavigate }) => {
               <span>New to Clinilync?</span>
               <button type="button" onClick={() => onNavigate('/register')}>Register your clinic</button>
             </div>
-            <p className="cl-login-footer-note"><ShieldCheck size={13} /> Secure access for authorised care teams</p>
           </div>
         </div>
       </section>
