@@ -13,7 +13,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-  const { user, activeOrganization, hasPermission } = useAuth();
+  const { activeOrganization, hasPermission } = useAuth();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [patientCount, setPatientCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
