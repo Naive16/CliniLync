@@ -10,7 +10,7 @@ import { hashPassword } from '../../security/password.js';
 import { Permissions, SystemRoles } from '../../security/permissions.js';
 import { config } from '../../config/index.js';
 import { SUPPORTED_COUNTRY_CODES, SUPPORTED_CURRENCY_CODES } from '../../config/organization-settings.js';
-import { sendTransactionalEmail } from '../../services/email.service.js';
+import { deliverStagingVerificationLink, sendTransactionalEmail } from '../../services/email.service.js';
 import { createOnboardingToken, getOnboardingState, hashOnboardingToken, isValidTimeZone, markOnboardingStep, OnboardingStatus, OnboardingStep, validateActivation } from '../../services/onboarding.service.js';
 
 export const v1OnboardingRouter = Router();
@@ -145,7 +145,7 @@ v1OnboardingRouter.post('/register', authRateLimiter, originValidationMiddleware
     const verificationUrl = `${config.appUrl.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(result.verificationToken)}`;
     let delivery: { accepted: boolean; provider: string; reason?: string };
     try {
-      delivery = await sendTransactionalEmail({
+      delivery = deliverStagingVerificationLink(email, verificationUrl) ?? await sendTransactionalEmail({
         to: email,
         subject: 'Verify your Clinilync clinic administrator email',
         text: `Verify your Clinilync administrator email by opening this link: ${verificationUrl}\n\nThis link expires in 24 hours and can only be used once.`,
@@ -394,7 +394,7 @@ v1OnboardingRouter.post('/email-verification/resend', authRateLimiter, originVal
   const verificationUrl = `${config.appUrl.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(rawToken)}`;
   let delivery: { accepted: boolean; provider: string; reason?: string };
   try {
-    delivery = await sendTransactionalEmail({
+    delivery = deliverStagingVerificationLink(user.rows[0].email, verificationUrl) ?? await sendTransactionalEmail({
       to: user.rows[0].email,
       subject: 'Verify your Clinilync clinic administrator email',
       text: `Verify your Clinilync administrator email by opening this link: ${verificationUrl}\n\nThis link expires in 24 hours and can only be used once.`,
