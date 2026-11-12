@@ -1,166 +1,325 @@
 /**
- * CLINILYNC Platform Landing View
+ * Public Clinilync product landing page.
+ * Explains the platform in customer language while keeping the authenticated
+ * staff workspace and patient portal on their existing routes.
  */
-
 import React from 'react';
-import { Activity, ShieldCheck, HeartPulse, Stethoscope, FileText, CreditCard, ArrowRight, CheckCircle2, Globe2 } from 'lucide-react';
+import {
+  Activity, ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2,
+  ClipboardList, CreditCard, FileHeart, HeartPulse, LockKeyhole,
+  Menu, Pill, ShieldCheck, Stethoscope, Users, X, Building2,
+  BarChart3, UserRound, Clock3
+} from 'lucide-react';
 
 interface LandingViewProps {
   onNavigate: (path: string) => void;
 }
 
+const modules = [
+  {
+    icon: UserRound,
+    title: 'Patient management',
+    description: 'Keep patient profiles and essential information organised in one place, with a clearer view of each patient record.',
+    label: 'Patient records',
+  },
+  {
+    icon: Stethoscope,
+    title: 'Clinical workflows',
+    description: 'Support clinical teams with structured encounters, medical records, patient problems and care plans.',
+    label: 'Clinical care',
+  },
+  {
+    icon: CalendarDays,
+    title: 'Appointments',
+    description: 'Coordinate appointments and give staff a more organised view of the clinic schedule.',
+    label: 'Scheduling',
+  },
+  {
+    icon: Pill,
+    title: 'Prescriptions',
+    description: 'Keep prescription workflows connected to the wider patient-care process.',
+    label: 'Medication',
+  },
+  {
+    icon: CreditCard,
+    title: 'Billing',
+    description: 'Bring billing tasks into the same workspace used to manage everyday clinic operations.',
+    label: 'Administration',
+  },
+  {
+    icon: Users,
+    title: 'Teams and departments',
+    description: 'Organise healthcare professionals, staff access and departments around your facility.',
+    label: 'People & teams',
+  },
+];
+
+const audiences = [
+  { icon: Building2, title: 'Clinic owners', description: 'Get a clearer view of the people, departments and operations that keep your facility running.' },
+  { icon: ClipboardList, title: 'Administrators', description: 'Coordinate staff, organise departments and manage essential administrative workflows.' },
+  { icon: Stethoscope, title: 'Doctors and nurses', description: 'Access the patient information and clinical workflows relevant to your role.' },
+  { icon: HeartPulse, title: 'Patients', description: 'Use a dedicated patient portal for supported patient-facing account experiences.' },
+];
+
 export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+
+  const go = (path: string) => {
+    setMenuOpen(false);
+    onNavigate(path);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-white border-b border-slate-200 py-16 sm:py-24">
-        <div className="max-w-5xl mx-auto px-6 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/80 text-teal-800 text-xs font-semibold tracking-wide">
-            <Globe2 className="w-3.5 h-3.5 text-teal-600" />
-            Global Healthcare Technology Platform · Phase 1 Technical Foundation
-          </div>
+    <div className="min-h-screen bg-white text-slate-900">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+          <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-2.5 text-left" aria-label="Clinilync home">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-700 text-white shadow-sm"><Activity className="h-5 w-5" /></span>
+            <span className="text-xl font-extrabold tracking-tight text-slate-900">clinilync<span className="text-teal-700">.</span></span>
+          </button>
 
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight max-w-3xl mx-auto leading-tight">
-            Connecting Healthcare. <br />
-            <span className="text-teal-700">Simplifying Care.</span>
-          </h1>
+          <nav className="hidden items-center gap-8 md:flex" aria-label="Main navigation">
+            <a href="#platform" className="text-sm font-medium text-slate-600 transition hover:text-teal-700">Platform</a>
+            <a href="#solutions" className="text-sm font-medium text-slate-600 transition hover:text-teal-700">Who it's for</a>
+            <a href="#how-it-works" className="text-sm font-medium text-slate-600 transition hover:text-teal-700">How it works</a>
+            <a href="#security" className="text-sm font-medium text-slate-600 transition hover:text-teal-700">Security</a>
+          </nav>
 
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            One unified, secure ecosystem connecting healthcare organizations, clinicians,
-            administrative teams, and patients across the full continuum of care.
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <button
-              onClick={() => onNavigate('/app')}
-              className="px-6 py-3 text-sm font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg shadow-xs transition-colors flex items-center gap-2"
-            >
-              <span>Launch Staff Platform</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => onNavigate('/patient')}
-              className="px-6 py-3 text-sm font-semibold text-slate-800 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <HeartPulse className="w-4 h-4 text-teal-600" />
-              <span>Enter Patient Portal</span>
-            </button>
-            <button
-              onClick={() => onNavigate('/admin')}
-              className="px-6 py-3 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-2"
-            >
-              <ShieldCheck className="w-4 h-4 text-slate-600" />
-              <span>Admin & Audit Console</span>
+          <div className="hidden items-center gap-3 md:flex">
+            <button type="button" onClick={() => go('/login')} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">Sign in</button>
+            <button type="button" onClick={() => go('/register')} className="inline-flex items-center gap-2 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800">
+              Get started <ArrowUpRight className="h-4 w-4" />
             </button>
           </div>
+
+          <button type="button" className="rounded-lg border border-slate-200 p-2 text-slate-700 md:hidden" aria-label={menuOpen ? 'Close navigation menu' : 'Open navigation menu'} aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
-      </section>
-
-      {/* Continuum of Care Chain */}
-      <section className="py-16 bg-slate-50 border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-6 space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900">The Unified Healthcare Journey</h2>
-            <p className="text-sm text-slate-600">
-              Zero isolated silos. Every step of the clinical workflow is connected through a single relational domain model.
-            </p>
+        {menuOpen && (
+          <div className="border-t border-slate-200 bg-white px-5 py-4 md:hidden">
+            <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
+              <a onClick={() => setMenuOpen(false)} href="#platform" className="rounded-lg px-3 py-3 text-sm font-medium text-slate-700">Platform</a>
+              <a onClick={() => setMenuOpen(false)} href="#solutions" className="rounded-lg px-3 py-3 text-sm font-medium text-slate-700">Who it's for</a>
+              <a onClick={() => setMenuOpen(false)} href="#how-it-works" className="rounded-lg px-3 py-3 text-sm font-medium text-slate-700">How it works</a>
+              <a onClick={() => setMenuOpen(false)} href="#security" className="rounded-lg px-3 py-3 text-sm font-medium text-slate-700">Security</a>
+              <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                <button type="button" onClick={() => go('/login')} className="rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700">Sign in</button>
+                <button type="button" onClick={() => go('/register')} className="rounded-lg bg-teal-700 px-4 py-3 text-sm font-semibold text-white">Get started</button>
+              </div>
+            </nav>
           </div>
+        )}
+      </header>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-2">
-              <div className="w-8 h-8 rounded bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">
-                01
+      <main>
+        <section className="relative overflow-hidden bg-slate-50">
+          <div className="pointer-events-none absolute -right-28 -top-32 h-96 w-96 rounded-full bg-teal-100/70 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-40 -left-24 h-96 w-96 rounded-full bg-sky-100/70 blur-3xl" />
+          <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.02fr_0.98fr] lg:gap-12 lg:py-28">
+            <div className="max-w-2xl">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-white px-3.5 py-2 text-xs font-semibold tracking-wide text-teal-800 shadow-sm">
+                <span className="h-2 w-2 rounded-full bg-teal-600" />
+                A connected platform for healthcare teams
               </div>
-              <h3 className="font-semibold text-slate-900 text-sm">Intake & Scheduling</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Patient intake, centralized MRN assignment, and flexible appointment queues with live check-in tracking.
+              <h1 className="text-4xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+                Better healthcare operations.
+                <span className="mt-2 block text-teal-700">One connected platform.</span>
+              </h1>
+              <p className="mt-7 max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
+                Clinilync helps healthcare facilities organise patient information, coordinate teams and manage everyday clinic operations in one secure workspace.
               </p>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-2">
-              <div className="w-8 h-8 rounded bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">
-                02
+              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                <button type="button" onClick={() => go('/register')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-teal-900/10 transition hover:-translate-y-0.5 hover:bg-teal-800">
+                  Get started with Clinilync <ArrowRight className="h-4 w-4" />
+                </button>
+                <a href="#platform" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3.5 text-sm font-bold text-slate-700 transition hover:border-teal-300 hover:bg-teal-50">
+                  Explore the platform
+                </a>
               </div>
-              <h3 className="font-semibold text-slate-900 text-sm">Lightweight EMR</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Structured clinical notes, vital sign tracking, ICD-10 diagnostic coding, and clinician sign-off workflow.
-              </p>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-2">
-              <div className="w-8 h-8 rounded bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">
-                03
+              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-medium text-slate-500">
+                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Connected clinic workflows</span>
+                <span className="inline-flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-teal-700" /> Role-aware access</span>
               </div>
-              <h3 className="font-semibold text-slate-900 text-sm">e-Rx & Diagnostics</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Electronic prescription generation, dosage schedules, laboratory requisitions, and abnormal result flagging.
-              </p>
             </div>
 
-            <div className="p-4 bg-white rounded-lg border border-slate-200 shadow-xs space-y-2">
-              <div className="w-8 h-8 rounded bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">
-                04
-              </div>
-              <h3 className="font-semibold text-slate-900 text-sm">Billing & Portal</h3>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Itemized invoice generation, payment receipting, and unified patient portal access under the same primary domain.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Architectural Rigor Banner */}
-      <section className="py-12 bg-white">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="bg-slate-900 text-white rounded-xl p-8 sm:p-10 space-y-6 shadow-sm">
-            <div className="space-y-2">
-              <span className="text-teal-400 text-xs font-semibold tracking-wider uppercase">
-                Enterprise Engineering Highlights
-              </span>
-              <h3 className="text-xl sm:text-2xl font-bold">
-                Built as a Scalable Global Healthcare Operating System
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-xs text-slate-300">
-              <div className="space-y-1.5">
-                <div className="text-white font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400" />
-                  Multi-Organization Isolation
+            <div className="relative mx-auto w-full max-w-xl">
+              <div className="absolute -inset-5 rounded-[2rem] bg-gradient-to-br from-teal-100 via-sky-50 to-white blur-xl" />
+              <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10">
+                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-700 text-white"><Activity className="h-4 w-4" /></span>
+                    <div><div className="text-xs font-bold text-slate-900">Clinilync workspace</div><div className="text-[10px] text-slate-500">Clinic overview</div></div>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">Workspace preview</span>
                 </div>
-                <p>
-                  Every tenant owns its data. Server-side isolation blocks cross-tenant leakage with high-severity audit alerts.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="text-white font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400" />
-                  Granular RBAC & RLAC Gates
+                <div className="grid grid-cols-[108px_1fr] sm:grid-cols-[132px_1fr]">
+                  <aside className="min-h-[300px] border-r border-slate-100 bg-slate-50 p-3">
+                    <div className="mb-5 h-2 w-16 rounded bg-slate-200" />
+                    {['Overview', 'Patients', 'Appointments', 'Clinical', 'Billing'].map((item, index) => (
+                      <div key={item} className={`mb-2 flex items-center gap-2 rounded-lg px-2 py-2 text-[9px] font-semibold ${index === 0 ? 'bg-teal-100 text-teal-800' : 'text-slate-500'}`}>
+                        <span className={`h-2 w-2 rounded-sm ${index === 0 ? 'bg-teal-700' : 'bg-slate-300'}`} />{item}
+                      </div>
+                    ))}
+                  </aside>
+                  <div className="p-4 sm:p-5">
+                    <div className="mb-1 text-[10px] font-medium text-slate-500">Facility overview</div>
+                    <div className="mb-4 text-base font-bold text-slate-900 sm:text-lg">Your clinic at a glance</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[{label:'Patient records',value:'Organised',icon:Users},{label:'Appointments',value:'Coordinated',icon:CalendarDays},{label:'Clinical care',value:'Connected',icon:FileHeart},{label:'Administration',value:'Centralised',icon:ClipboardList}].map((item) => (
+                        <div key={item.label} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                          <item.icon className="mb-3 h-4 w-4 text-teal-700" />
+                          <div className="text-[9px] text-slate-500">{item.label}</div>
+                          <div className="mt-1 text-[11px] font-bold text-slate-800">{item.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 rounded-xl border border-slate-100 p-3">
+                      <div className="mb-3 flex items-center justify-between"><span className="text-[10px] font-bold text-slate-800">Connected workflows</span><Activity className="h-3.5 w-3.5 text-teal-700" /></div>
+                      <div className="space-y-2.5">
+                        {['Patient information','Care team coordination','Clinic administration'].map((item, index) => (
+                          <div key={item} className="flex items-center gap-2"><span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-50 text-[9px] font-bold text-teal-700">{index + 1}</span><span className="text-[9px] font-medium text-slate-600">{item}</span><span className="ml-auto h-1.5 w-12 rounded-full bg-teal-100"><span className="block h-1.5 w-2/3 rounded-full bg-teal-600" /></span></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <p>
-                  Each person sees only the work their role allows.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="text-white font-semibold flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-teal-400" />
-                  Immutable Audit Logging
-                </div>
-                <p>
-                  Append-only audit trail capturing actor, IP address, action, and sanitized metadata for full regulatory compliance.
-                </p>
+                <div className="border-t border-slate-100 bg-white px-5 py-3 text-[9px] text-slate-400">Illustrative product preview · Not live patient data</div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 py-6 bg-white text-center text-xs text-slate-500">
-        CLINILYNC · Connecting Healthcare. Simplifying Care. · Global Multi-Tenant Architecture
+        <section id="platform" className="scroll-mt-24 py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">The Clinilync platform</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">The essential parts of clinic operations, working together.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">Bring patient information, clinical work and facility administration into a shared operating environment.</p>
+            </div>
+            <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {modules.map((module, index) => (
+                <article key={module.title} className="group rounded-2xl border border-slate-200 bg-white p-6 transition duration-200 hover:-translate-y-1 hover:border-teal-200 hover:shadow-xl hover:shadow-slate-900/5">
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700 transition group-hover:bg-teal-700 group-hover:text-white"><module.icon className="h-5 w-5" /></span>
+                    <span className="text-xs font-semibold text-slate-300">0{index + 1}</span>
+                  </div>
+                  <div className="mt-6 text-[10px] font-bold uppercase tracking-wider text-teal-700">{module.label}</div>
+                  <h3 className="mt-2 text-lg font-bold text-slate-900">{module.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{module.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-y border-slate-100 bg-slate-50 py-20 sm:py-24">
+          <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">A connected patient journey</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">A clearer journey from first contact to follow-up.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">Clinilync brings the people and information involved in everyday care into one organised environment, helping teams work with better continuity.</p>
+              <button type="button" onClick={() => go('/register')} className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-teal-800 hover:text-teal-900">Explore Clinilync <ArrowRight className="h-4 w-4" /></button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                {icon:UserRound,title:'Patient intake',copy:'Create and maintain organised patient records.'},
+                {icon:CalendarDays,title:'Appointments',copy:'Coordinate visits and clinic schedules.'},
+                {icon:Stethoscope,title:'Clinical workflows',copy:'Support encounters and patient-care documentation.'},
+                {icon:ClipboardList,title:'Ongoing administration',copy:'Keep teams and essential clinic tasks connected.'},
+              ].map((step,index)=>(
+                <div key={step.title} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-5">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700"><step.icon className="h-5 w-5" /></span>
+                  <div><div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Step 0{index+1}</div><h3 className="mt-1 text-sm font-bold text-slate-900">{step.title}</h3><p className="mt-1.5 text-xs leading-5 text-slate-600">{step.copy}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="solutions" className="scroll-mt-24 py-20 sm:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="max-w-2xl">
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Designed around your team</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">One platform. Different roles. Shared direction.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">Give each member of your healthcare team a clearer place in the work that keeps your facility running.</p>
+            </div>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {audiences.map((person)=>(
+                <article key={person.title} className="rounded-2xl border border-slate-200 p-6">
+                  <person.icon className="h-6 w-6 text-teal-700" />
+                  <h3 className="mt-5 text-base font-bold text-slate-900">{person.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{person.description}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="how-it-works" className="scroll-mt-24 bg-slate-900 py-20 text-white sm:py-24">
+          <div className="mx-auto max-w-7xl px-5 sm:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-300">Getting started</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">A straightforward start for your facility.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-300">Set up your organisation, configure your clinic and bring your team into one workspace.</p>
+            </div>
+            <div className="mt-12 grid gap-8 md:grid-cols-3">
+              {[
+                {number:'01',title:'Create your organisation',copy:'Register your facility and establish your organisation workspace.'},
+                {number:'02',title:'Set up your clinic',copy:'Add your facility details and configure the departments you need.'},
+                {number:'03',title:'Bring in your team',copy:'Invite colleagues, assign appropriate access and begin organising your workflows.'},
+              ].map((step)=>(
+                <div key={step.number} className="border-t border-slate-700 pt-6">
+                  <div className="text-sm font-bold tracking-widest text-teal-300">{step.number}</div>
+                  <h3 className="mt-4 text-lg font-bold">{step.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-300">{step.copy}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-12 text-center">
+              <button type="button" onClick={() => go('/register')} className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-slate-900 transition hover:bg-teal-50">Create your organisation <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          </div>
+        </section>
+
+        <section id="security" className="scroll-mt-24 py-20 sm:py-24">
+          <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+            <div>
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><ShieldCheck className="h-7 w-7" /></div>
+              <div className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Security by design</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Patient information deserves careful handling.</h2>
+              <p className="mt-5 text-base leading-7 text-slate-600">Clinilync is built around organisation-level data separation, role-aware permissions and recorded activity so access to sensitive workflows can be managed responsibly.</p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 p-6"><LockKeyhole className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Controlled access</h3><p className="mt-2 text-sm leading-6 text-slate-600">Role and resource permissions help ensure people access only the information and actions assigned to them.</p></div>
+              <div className="rounded-2xl border border-slate-200 p-6"><ShieldCheck className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Organisation separation</h3><p className="mt-2 text-sm leading-6 text-slate-600">Organisation-aware data boundaries are part of the platform's underlying design.</p></div>
+              <div className="rounded-2xl border border-slate-200 p-6"><FileHeart className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Accountability</h3><p className="mt-2 text-sm leading-6 text-slate-600">Auditable activity supports visibility into important actions performed in the system.</p></div>
+              <div className="rounded-2xl border border-slate-200 p-6"><Users className="h-5 w-5 text-teal-700" /><h3 className="mt-4 text-sm font-bold text-slate-900">Team-based workflows</h3><p className="mt-2 text-sm leading-6 text-slate-600">Access can be structured around the responsibilities of each member of your facility.</p></div>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 pb-20 sm:px-8 sm:pb-24">
+          <div className="mx-auto max-w-7xl overflow-hidden rounded-3xl bg-teal-800 px-6 py-12 text-center text-white sm:px-12 sm:py-16">
+            <div className="mx-auto max-w-2xl">
+              <div className="text-xs font-bold uppercase tracking-[0.18em] text-teal-100">Move your clinic forward</div>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">Bring your healthcare operations together.</h2>
+              <p className="mt-5 text-base leading-7 text-teal-50">Create your organisation workspace and explore a more connected way to manage your facility.</p>
+              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                <button type="button" onClick={() => go('/register')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-teal-900 transition hover:bg-teal-50">Get started <ArrowRight className="h-4 w-4" /></button>
+                <button type="button" onClick={() => go('/login')} className="rounded-xl border border-teal-300 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-teal-700">Already have an account? Sign in</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-slate-50">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-8 sm:px-8 md:flex-row md:items-center md:justify-between">
+          <div><div className="text-lg font-extrabold tracking-tight text-slate-900">clinilync<span className="text-teal-700">.</span></div><p className="mt-1 text-xs text-slate-500">Healthcare operations, connected.</p></div>
+          <div className="flex flex-wrap gap-x-6 gap-y-3 text-xs font-medium text-slate-500"><a href="#platform" className="hover:text-teal-700">Platform</a><a href="#solutions" className="hover:text-teal-700">Who it's for</a><a href="#security" className="hover:text-teal-700">Security</a><button type="button" onClick={() => go('/patient/login')} className="hover:text-teal-700">Patient portal</button><button type="button" onClick={() => go('/login')} className="hover:text-teal-700">Sign in</button></div>
+          <div className="text-xs text-slate-400">© {new Date().getFullYear()} Clinilync. All rights reserved.</div>
+        </div>
       </footer>
     </div>
   );
