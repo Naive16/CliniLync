@@ -28,7 +28,7 @@ jobs:
         run: bun run lint
 
       - name: Execute security and architectural tests
-        run: bun test
+        run: bun run test
 
       - name: Build frontend distribution
         run: bun run build
