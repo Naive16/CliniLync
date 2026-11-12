@@ -14,6 +14,24 @@ export interface EmailDeliveryResult {
 }
 
 /**
+ * Staging-only verification delivery for controlled manual testing.
+ * The raw link is written to private Render service logs, never returned by an API.
+ * This is disabled unless NODE_ENV=staging, the feature flag is explicit,
+ * and the recipient is on the staging allowlist.
+ */
+export function deliverStagingVerificationLink(email: string, verificationUrl: string): EmailDeliveryResult | null {
+  if (config.env !== 'staging' || process.env.STAGING_EMAIL_VERIFICATION_LOG !== 'true') return null;
+  const allowlist = (process.env.STAGING_EMAIL_VERIFICATION_ALLOWLIST || '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (!allowlist.includes(email.trim().toLowerCase())) return null;
+
+  console.info('[STAGING EMAIL VERIFICATION] One-time verification link (restricted staging logs):', verificationUrl);
+  return { accepted: true, provider: 'staging-console' };
+}
+
+/**
  * Small provider boundary. Production must use a real provider; local/test
  * environments deliberately report an unavailable provider instead of
  * pretending that an email was sent.
