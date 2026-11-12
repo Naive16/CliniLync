@@ -32,7 +32,7 @@ const __dirname = path.dirname(__filename);
 
 const PORT = config.port;
 const HOST = process.env.HOST || '0.0.0.0';
-const isProd = config.isProduction;
+const isHostedRuntime = config.isProduction || config.env === 'staging';
 
 async function bootstrap() {
   validateRuntimeConfig();
@@ -92,7 +92,7 @@ async function bootstrap() {
   app.use('/api', apiErrorHandler);
 
   // Frontend Serving
-  if (!isProd) {
+  if (!isHostedRuntime) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa'
