@@ -40,11 +40,11 @@ const OnboardingIntro: React.FC<{ invitation?: boolean }> = ({ invitation = fals
       </ul>
     </div>
 
-    <p className="cl-onboarding-intro-note">
-      {invitation
-        ? 'Never share your password with clinic staff. Use your own secure sign-in and contact your administrator if you need account help.'
-        : 'No patient information is collected during clinic registration.'}
-    </p>
+    {invitation && (
+      <p className="cl-onboarding-intro-note">
+        Never share your password with clinic staff. Use your own secure sign-in and contact your administrator if you need account help.
+      </p>
+    )}
   </section>
 );
 
