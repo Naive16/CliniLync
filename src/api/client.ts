@@ -70,7 +70,7 @@ class ApiClient {
     const body = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const err = new Error(body?.error?.message || `API error (${res.status})`);
+      const err = new Error(body?.error?.message || body?.data?.message || `API error (${res.status})`);
       (err as unknown as { status: number; code?: string }).status = res.status;
       (err as unknown as { status: number; code?: string }).code = body?.error?.code || 'UNKNOWN_ERROR';
       throw err;
