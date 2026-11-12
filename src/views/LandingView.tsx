@@ -142,7 +142,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-700 text-white"><Activity className="h-4 w-4" /></span>
                     <div><div className="text-xs font-bold text-slate-900">Clinilync workspace</div><div className="text-[10px] text-slate-500">Clinic overview</div></div>
                   </div>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">Workspace preview</span>
+                  
                 </div>
                 <div className="grid grid-cols-[108px_1fr] sm:grid-cols-[132px_1fr]">
                   <aside className="min-h-[300px] border-r border-slate-100 bg-slate-50 p-3">
@@ -267,9 +267,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
                 </div>
               ))}
             </div>
-            <div className="mt-12 text-center">
-              <button type="button" onClick={() => go('/register')} className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-slate-900 transition hover:bg-teal-50">Create your organisation <ArrowRight className="h-4 w-4" /></button>
-            </div>
+
           </div>
         </section>
 
@@ -277,7 +275,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
             <div>
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-teal-800"><ShieldCheck className="h-7 w-7" /></div>
-              <div className="mt-6 text-xs font-bold uppercase tracking-[0.18em] text-teal-700">Security by design</div>
+              
               <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-950 sm:text-4xl">Patient data, handled responsibly.</h2>
               <p className="mt-5 text-base leading-7 text-slate-600">Role-based access, organisation separation and activity records.</p>
             </div>
