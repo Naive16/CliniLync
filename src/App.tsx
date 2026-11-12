@@ -136,7 +136,12 @@ function AppContent() {
     });
   };
 
-  // Public marketing site is the default route; staff and patient workspaces stay separate.\n  if (currentPath === '/') {\n    return <LandingView onNavigate={navigate} />;\n  }\n\n  if (isLoading) {
+  // Public marketing site is the default route; staff and patient workspaces stay separate.
+  if (currentPath === '/') {
+    return <LandingView onNavigate={navigate} />;
+  }
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-600">
         <div className="flex items-center gap-3 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
