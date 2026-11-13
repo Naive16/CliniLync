@@ -88,7 +88,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onNavigate }) => {
           <span className="cl-home-eyebrow">A clearer way to run your clinic</span>
           <h1>Clinic management, simplified for <span>better connected care.</span></h1>
           <p>Bring patient records, appointments and everyday clinic work together. Give your team a clearer view of the day, and more time to focus on people.</p>
-          <div className="cl-home-hero-actions"><button type="button" onClick={() => onNavigate('/register')} className="cl-home-primary">Get started <ArrowRight size={15} /></button><button type="button" onClick={() => onNavigate('/platform')} className="cl-home-secondary">Explore the platform</button></div>
+          
         </div>
         <div className="cl-home-preview-wrap"><DashboardPreview /></div>
       </section>
