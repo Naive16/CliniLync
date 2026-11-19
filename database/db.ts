@@ -576,16 +576,30 @@ let dbInstance: IDatabaseClient | null = null;
 export function getDatabaseClient(): IDatabaseClient {
   if (dbInstance) return dbInstance;
 
+  const runtime = (process.env.NODE_ENV || 'development').toLowerCase();
+  const isHostedRuntime = runtime === 'production' || runtime === 'staging';
   const connectionString = process.env.DATABASE_URL;
-  if (process.env.NODE_ENV === 'production' && (!connectionString || connectionString.includes('dummy') || connectionString.includes('example'))) {
-    throw new Error('DATABASE_URL is required in production; refusing to use the in-process database adapter.');
+  const hasUsableConnectionString = Boolean(
+    connectionString &&
+    !connectionString.includes('dummy') &&
+    !connectionString.includes('example')
+  );
+
+  if (isHostedRuntime && !hasUsableConnectionString) {
+    throw new Error('DATABASE_URL is required in hosted runtimes; refusing to use the in-process database adapter.');
   }
-  if (connectionString && !connectionString.includes('dummy') && !connectionString.includes('example')) {
+
+  if (hasUsableConnectionString) {
     try {
-      dbInstance = new LivePostgresClient(connectionString);
+      dbInstance = new LivePostgresClient(connectionString!);
       return dbInstance;
     } catch (err) {
-      console.warn('PostgreSQL connection initialization failed, falling back to in-process relational engine:', err);
+      // A hosted service must never silently start with process-local data.
+      // Keep the in-process adapter strictly for local development and tests.
+      if (isHostedRuntime) {
+        throw new Error('PostgreSQL client initialization failed in a hosted runtime; refusing to use the in-process database adapter.', { cause: err });
+      }
+      console.warn('PostgreSQL client initialization failed, falling back to the in-process relational engine in a non-hosted runtime:', err);
     }
   }
 
