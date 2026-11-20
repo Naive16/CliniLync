@@ -16,7 +16,7 @@ Move the existing CliniLync application from the suspended Render web service to
 ## Existing application shape
 
 - `server.ts` creates and starts the Express application, runs hosted startup checks, mounts API routers, and serves the Vite build. It is not a Worker entry point.
-- `backend/cloudflare/worker.ts` is currently a gateway. It serves static assets and proxies `/api/*` to `API_ORIGIN`; it does not implement the application API.
+- `backend/cloudflare/worker.ts` was a gateway at baseline. The migration branch now replaces it with a Worker entry that mounts the shared Express API via `httpServerHandler`; this implementation is pending CI and live runtime validation.
 - `database/db.ts` currently reads `process.env.DATABASE_URL`, creates a process-global `pg.Pool`, reads a Supabase CA certificate from the local filesystem, and contains an in-process fallback. A Worker cannot simply execute this unchanged.
 - The staging Wrangler configuration currently points API traffic to an external origin and has no active Hyperdrive binding. Deploying it without an API origin would produce 503 responses for API routes; that would not be a functioning migration.
 - The API uses shared Express routers and middleware for authentication, organization membership, RBAC, tenant checks, audit logging, and clinical operations. These must remain in force; do not expose partial API parity.
@@ -52,4 +52,4 @@ The database adapter must accept a Worker-provided Hyperdrive connection string 
 
 ## Current status
 
-This commit records the verified baseline and the required implementation gates. It does not claim that the Worker API has been implemented or deployed. No deployment should be made from the current gateway-only Worker because its API path is not a complete CliniLync backend.
+The migration branch now contains an initial Worker-hosted Express API and request-scoped Hyperdrive adapter, plus a CI dry-run build. These changes are not yet verified in the Workers runtime. The Hyperdrive binding and dedicated DB login are not configured, so the Worker must not be deployed yet. No production DNS, Render, or Supabase changes have been made.
