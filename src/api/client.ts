@@ -183,7 +183,7 @@ class ApiClient {
   async v1RegisterClinic(payload: Record<string, unknown>) {
     return this.request<{
       organization: { id: string; name: string; slug: string };
-      administrator: { email: string; firstName: string; lastName: string };
+      administrator: { email: string; firstName: string; lastName: string; temporaryPassword: string };
       emailVerificationRequired: boolean;
       deliveryAccepted: boolean;
       deliveryProvider: string;

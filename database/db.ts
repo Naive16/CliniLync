@@ -10,6 +10,7 @@
 import pg from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 export interface QueryResult<T = Record<string, unknown>> {
   rows: T[];
@@ -570,22 +571,153 @@ class LivePostgresClient implements IDatabaseClient {
   }
 }
 
-// Global Singleton Instance
+// Node runtimes use one process-level adapter. Cloudflare requests use an
+// AsyncLocalStorage-scoped client so concurrent requests never share a Client.
+const requestDatabaseContext = new AsyncLocalStorage<IDatabaseClient>();
+
+// Global singleton is retained only for the traditional Node server.
 let dbInstance: IDatabaseClient | null = null;
+let workerDatabaseMode = false;
+
+/** Prevent background code outside an active request from falling back to local storage. */
+export function enableWorkerDatabaseMode(): void {
+  workerDatabaseMode = true;
+}
+
+class RequestPostgresClient implements IDatabaseClient {
+  private activeOperations = 0;
+  private closing = false;
+  private drainWaiters: Array<() => void> = [];
+
+  constructor(private readonly client: pg.Client) {}
+
+  isLivePostgres(): boolean { return true; }
+
+  private async run<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.closing) throw new Error('Request database client is closing.');
+    this.activeOperations++;
+    try {
+      return await operation();
+    } finally {
+      this.activeOperations--;
+      if (this.closing && this.activeOperations === 0) {
+        for (const resolve of this.drainWaiters.splice(0)) resolve();
+      }
+    }
+  }
+
+  async query<T = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<QueryResult<T>> {
+    return this.run(async () => {
+      const result = await this.client.query(text, params);
+      return { rows: result.rows as T[], rowCount: result.rowCount ?? result.rows.length };
+    });
+  }
+
+  async transaction<T>(callback: (client: IDatabaseClient) => Promise<T>): Promise<T> {
+    return this.run(async () => {
+      await this.client.query('BEGIN');
+      const transactionClient: IDatabaseClient = {
+        query: async <R = Record<string, unknown>>(text: string, params: unknown[] = []) => {
+          const result = await this.client.query(text, params);
+          return { rows: result.rows as R[], rowCount: result.rowCount ?? result.rows.length };
+        },
+        transaction: async () => { throw new Error('Nested transactions are not supported'); },
+        close: async () => {},
+        isLivePostgres: () => true
+      };
+      try {
+        const value = await callback(transactionClient);
+        await this.client.query('COMMIT');
+        return value;
+      } catch (error) {
+        await this.client.query('ROLLBACK');
+        throw error;
+      }
+    });
+  }
+
+  async close(): Promise<void> {
+    if (this.closing) return;
+    this.closing = true;
+    if (this.activeOperations > 0) {
+      await new Promise<void>(resolve => this.drainWaiters.push(resolve));
+    }
+    await this.client.end();
+  }
+}
+
+/**
+ * Express middleware for a Cloudflare Hyperdrive-backed request.
+ * A fresh pg.Client is created for each invocation; Hyperdrive owns the
+ * reusable origin connection pool. The AsyncLocalStorage scope keeps the
+ * current request's DB client isolated from concurrent requests.
+ */
+export function hyperdriveDatabaseMiddleware(connectionString: () => string) {
+  return async (_req: import('express').Request, res: import('express').Response, next: import('express').NextFunction): Promise<void> => {
+    const url = connectionString();
+    if (!url) {
+      next(new Error('Cloudflare Hyperdrive binding is missing; refusing to use local or in-memory storage.'));
+      return;
+    }
+
+    const client = new pg.Client({ connectionString: url, application_name: 'clinilync-cloudflare-worker' });
+    try {
+      await client.connect();
+    } catch (error) {
+      next(error as Error);
+      return;
+    }
+
+    const requestClient = new RequestPostgresClient(client);
+    let closing: Promise<void> | undefined;
+    const close = () => {
+      closing ||= requestClient.close().catch(error => {
+        console.error('[CLINILYNC] Failed to close request database client:', error);
+      });
+    };
+    res.once('finish', close);
+    res.once('close', close);
+
+    requestDatabaseContext.run(requestClient, () => next());
+  };
+}
+
+export function runWithRequestDatabaseClient<T>(client: IDatabaseClient, callback: () => T): T {
+  return requestDatabaseContext.run(client, callback);
+}
 
 export function getDatabaseClient(): IDatabaseClient {
+  const requestClient = requestDatabaseContext.getStore();
+  if (requestClient) return requestClient;
+  if (workerDatabaseMode) {
+    throw new Error('Cloudflare Worker database access requires an active request-scoped Hyperdrive connection.');
+  }
   if (dbInstance) return dbInstance;
 
+  const runtime = (process.env.NODE_ENV || 'development').toLowerCase();
+  const isHostedRuntime = runtime === 'production' || runtime === 'staging';
   const connectionString = process.env.DATABASE_URL;
-  if (process.env.NODE_ENV === 'production' && (!connectionString || connectionString.includes('dummy') || connectionString.includes('example'))) {
-    throw new Error('DATABASE_URL is required in production; refusing to use the in-process database adapter.');
+  const hasUsableConnectionString = Boolean(
+    connectionString &&
+    !connectionString.includes('dummy') &&
+    !connectionString.includes('example')
+  );
+
+  if (isHostedRuntime && !hasUsableConnectionString) {
+    throw new Error('DATABASE_URL is required in hosted runtimes; refusing to use the in-process database adapter.');
   }
-  if (connectionString && !connectionString.includes('dummy') && !connectionString.includes('example')) {
+
+  if (hasUsableConnectionString) {
     try {
-      dbInstance = new LivePostgresClient(connectionString);
+      dbInstance = new LivePostgresClient(connectionString!);
       return dbInstance;
     } catch (err) {
-      console.warn('PostgreSQL connection initialization failed, falling back to in-process relational engine:', err);
+      // A hosted service must never silently start with process-local data.
+      // Keep the in-process adapter strictly for local development and tests.
+      if (isHostedRuntime) {
+        throw new Error('PostgreSQL client initialization failed in a hosted runtime; refusing to use the in-process database adapter.', { cause: err });
+      }
+      console.warn('PostgreSQL client initialization failed, falling back to the in-process relational engine in a non-hosted runtime:', err);
     }
   }
 

@@ -15,6 +15,7 @@ import { runPhase8ClinicalTests } from './phase8-clinical.test.js';
 import { runPhase9DiagnosesCarePlansTests } from './phase9-diagnoses-care-plans.test.js';
 import { runPhase10MedicationTests } from './phase10-medications.test.js';
 import { runSubscriptionTests } from './subscriptions.test.js';
+import { runCloudflareDatabaseContextTests } from './cloudflare-database-context.test.js';
 
 async function main() {
   console.log('====================================================');
@@ -37,7 +38,8 @@ async function main() {
     ...(await runPhase8ClinicalTests()),
     ...(await runPhase9DiagnosesCarePlansTests()),
     ...(await runPhase10MedicationTests()),
-    ...(await runSubscriptionTests())
+    ...(await runSubscriptionTests()),
+    ...(await runCloudflareDatabaseContextTests())
   ];
 
   let passed = 0;

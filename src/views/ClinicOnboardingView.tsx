@@ -127,18 +127,15 @@ const IconInput: React.FC<{
 );
 
 export const ClinicOnboardingView: React.FC<ClinicOnboardingViewProps> = ({ onNavigate }) => {
-  const [form, setForm] = useState({ clinicName: '', countryCode: 'MWI', region: '', city: '', addressLine1: '', postalCode: '', phone: '', currencyCode: 'MWK', adminFirstName: '', adminLastName: '', adminEmail: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ clinicName: '', countryCode: 'MWI', region: '', city: '', addressLine1: '', postalCode: '', phone: '', currencyCode: 'MWK', adminFirstName: '', adminLastName: '', adminEmail: '' });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [result, setResult] = useState<{ organization: { name: string }; administrator: { email: string }; nextStep: string } | null>(null);
+  const [result, setResult] = useState<{ organization: { name: string }; administrator: { email: string; temporaryPassword: string }; nextStep: string } | null>(null);
 
   const update = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    if (form.password !== form.confirmPassword) { setError('The passwords do not match.'); return; }
     setSubmitting(true);
     try {
       const response = await api.v1RegisterClinic(form);
@@ -160,9 +157,15 @@ export const ClinicOnboardingView: React.FC<ClinicOnboardingViewProps> = ({ onNa
         <div className="cl-onboarding-result" role="status" aria-live="polite">
           <div className="cl-onboarding-result-icon" aria-hidden="true"><CheckCircle2 size={22} /></div>
           <div>
-            <h3>Registration started</h3>
-            <p>{result.organization.name} has been registered. The administrator account is {result.administrator.email}.</p>
-            <p className="muted-text">The workspace remains locked until the administrator verifies their email and completes setup.</p>
+            <h3>Clinic registered successfully</h3>
+            <p>{result.organization.name} has been registered. Save these administrator sign-in details now.</p>
+            <div className="cl-onboarding-credentials" aria-label="Temporary administrator login details">
+              <div><span>Email / username</span><strong>{result.administrator.email}</strong></div>
+              <div><span>Temporary password</span><strong className="cl-onboarding-temp-password">{result.administrator.temporaryPassword}</strong></div>
+              <button type="button" className="cl-ui-button cl-ui-button-secondary cl-ui-button-sm" onClick={() => void navigator.clipboard?.writeText(`Email: ${result.administrator.email}\\nTemporary password: ${result.administrator.temporaryPassword}`)}>Copy login details</button>
+            </div>
+            <p className="muted-text">This temporary password is shown only once. After email verification and your first sign-in, change it in Settings → Change password.</p>
+            <p className="muted-text">The workspace remains locked until the administrator verifies their email. Keep the temporary password private.</p>
             <p>{result.nextStep}</p>
           </div>
           <button type="button" className="cl-ui-button cl-ui-button-primary cl-ui-button-md" onClick={() => onNavigate('/login')}>
@@ -212,12 +215,7 @@ export const ClinicOnboardingView: React.FC<ClinicOnboardingViewProps> = ({ onNa
               <IconInput inputId="administrator-email" icon={<Mail size={16} />} type="email" value={form.adminEmail} onChange={(value) => update('adminEmail', value)} placeholder="admin@yourclinic.org" autoComplete="email" />
             </Field>
 
-            <Field label="Password" inputId="clinic-password" helperId="clinic-password-help" helper="Use at least 6 characters.">
-              <IconInput inputId="clinic-password" icon={<Lock size={16} />} type={showPassword ? 'text' : 'password'} value={form.password} onChange={(value) => update('password', value)} minLength={6} autoComplete="new-password" ariaDescribedBy="clinic-password-help" showPassword={showPassword} onTogglePassword={() => setShowPassword((visible) => !visible)} />
-            </Field>
-            <Field label="Confirm password" inputId="clinic-confirm-password">
-              <IconInput inputId="clinic-confirm-password" icon={<Lock size={16} />} type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={(value) => update('confirmPassword', value)} minLength={6} autoComplete="new-password" showPassword={showConfirmPassword} onTogglePassword={() => setShowConfirmPassword((visible) => !visible)} />
-            </Field>
+
           </div>
 
           <button type="submit" disabled={submitting} className="cl-ui-button cl-ui-button-primary cl-ui-button-lg cl-onboarding-submit">
