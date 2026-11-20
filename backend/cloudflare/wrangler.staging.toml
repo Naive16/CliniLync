@@ -5,6 +5,8 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 ENVIRONMENT = "staging"
+APP_URL = "https://clinilync-staging.kelvinmkanda01.workers.dev"
+CORS_ORIGINS = "https://clinilync-staging.kelvinmkanda01.workers.dev"
 
 [assets]
 directory = "../../dist"
@@ -20,6 +22,5 @@ id = "14656e8e20ec4b978b6c245769d4062e"
 
 # Set these as Worker secrets/vars, not in source control:
 # SESSION_SECRET (secret; >=32 chars)
-# APP_URL (var; https://clinilync-staging.kelvinmkanda01.workers.dev)
-# CORS_ORIGINS (var; comma-separated allowed origins)
-# EMAIL_FROM (var; required by existing hosted config policy)
+# EMAIL_FROM (set only to a verified sender address when email delivery is configured)
+# RESEND_API_KEY or EMAIL_WEBHOOK_URL only when an email provider is approved.
