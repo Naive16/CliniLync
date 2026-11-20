@@ -67,10 +67,10 @@ The current CI suite validates existing Node behavior. It does not yet test:
 ## Required implementation order
 
 1. **Completed in this branch:** extracted `createApp(options)` into `backend/app.ts`; `server.ts` now owns Node bootstrap, seed/migration policy, Vite/static hosting, listening, and shutdown. This extraction still requires CI and runtime verification.
-2. Add a Worker-only entry using the documented `cloudflare:node` / `httpServerHandler` integration. Mount the same Express app; do not proxy API requests to a second origin.
-3. Replace implicit global database selection with explicit request-scoped injection. Build a Hyperdrive-backed adapter with `pg` that supports parameterized queries, transactions, and guaranteed release/cleanup. Missing binding must fail closed.
-4. Introduce explicit runtime config injection and audit all process-local caches/state.
-5. Add Worker-specific tests and run a real `wrangler` build/dev smoke test.
+2. **Implemented in this branch:** `backend/cloudflare/worker.ts` mounts the shared Express app through `cloudflare:node` / `httpServerHandler`; API traffic no longer proxies to `API_ORIGIN`.
+3. **Implemented in this branch:** added a per-request `pg.Client` Hyperdrive adapter, AsyncLocalStorage request isolation, transaction support, in-flight query draining, and fail-closed behavior when no request-scoped Worker DB context exists. Needs CI and real Hyperdrive runtime verification.
+4. **Partially implemented:** added Cloudflare binding-to-config injection and explicit Worker runtime mode. The session store's synchronous in-memory map remains for non-HTTP/test paths; HTTP auth uses PostgreSQL async methods. Confirm all routes and background tasks do not depend on process-local state.
+5. **Partially implemented:** added a concurrent request-context isolation regression test and a Wrangler dry-run bundle step to CI. Both must pass; actual Worker runtime/cookie/clinical tests are still required.
 6. Deploy to the `workers.dev` staging hostname only after a dedicated database login and Hyperdrive binding are configured.
 7. Run synthetic clinical and security regression tests. Compare database migration ledger and selected baseline counts before/after.
 8. Only then request a separate production domain/DNS cutover approval. Keep Render intact for rollback.
@@ -91,10 +91,10 @@ The current CI suite validates existing Node behavior. It does not yet test:
 | Express-on-Workers platform support confirmed | Confirmed from Cloudflare docs |
 | Existing `pg` version meets Hyperdrive minimum | Confirmed from repository manifest |
 | App factory extracted | Implemented in migration branch; CI verification pending |
-| Request-scoped Hyperdrive database adapter | Not started |
-| Worker runtime dependency audit/tests | Not started |
+| Request-scoped Hyperdrive database adapter | Implemented in branch; CI and live binding verification pending |
+| Worker runtime dependency audit/tests | Isolation test and Wrangler dry-run added; results pending |
 | Dedicated Worker DB login / Hyperdrive binding | Not configured |
 | Cloudflare staging deployment | Not deployed |
 | Production cutover | Not authorised/performed |
 
-**Conclusion:** Continue implementation on this branch, but do not treat the passing Node CI run as Worker validation. A safe migration requires the app factory and request-scoped database architecture before a deployable Worker can be claimed.
+**Conclusion:** The shared API adapter, request-scoped database path, runtime binding injection, and initial CI checks are now implemented in source. They are not yet verified by a fresh CI run or a live Worker deployment. Do not claim the migration complete until those checks and synthetic clinical/security tests pass.
