@@ -35,7 +35,7 @@ const app = createApp({
     }
     configureRuntimeConfigFromBindings({
       env: runtimeEnv.ENVIRONMENT === 'production' ? 'production' : 'staging',
-      appUrl: runtimeEnv.APP_URL || 'https://clinilync-staging.workers.dev',
+      appUrl: runtimeEnv.APP_URL || 'https://clinilync-staging.kelvinmkanda01.workers.dev',
       sessionSecret: secret,
       corsOrigins: (runtimeEnv.CORS_ORIGINS || runtimeEnv.APP_URL || '').split(',').map(value => value.trim()).filter(Boolean),
       emailFrom: runtimeEnv.EMAIL_FROM
