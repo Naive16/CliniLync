@@ -26,7 +26,7 @@ for (const file of candidates) {
       Object.prototype.hasOwnProperty.call(pkg.browser, 'stream')
     )) {
       delete pkg.browser;
-      await writeFile(file, JSON.stringify(pkg, null, 2) + '\\n');
+      await writeFile(file, JSON.stringify(pkg, null, 2) + '\n');
       patched++;
     }
   } catch (error) {
