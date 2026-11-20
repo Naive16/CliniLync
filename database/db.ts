@@ -650,6 +650,10 @@ export function hyperdriveDatabaseMiddleware(connectionString: () => string) {
   };
 }
 
+export function runWithRequestDatabaseClient<T>(client: IDatabaseClient, callback: () => T): T {
+  return requestDatabaseContext.run(client, callback);
+}
+
 export function getDatabaseClient(): IDatabaseClient {
   const requestClient = requestDatabaseContext.getStore();
   if (requestClient) return requestClient;
