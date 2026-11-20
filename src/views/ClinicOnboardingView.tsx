@@ -5,6 +5,9 @@ import {
   Building2,
   Check,
   CheckCircle2,
+  Eye,
+  EyeOff,
+  Lock,
   Mail,
   UserRound,
 } from 'lucide-react';
