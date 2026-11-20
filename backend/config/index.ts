@@ -108,3 +108,26 @@ export function validateRuntimeConfig(): void {
     throw new Error(`Hosted runtime configuration is incomplete: ${missing.join(', ')}`);
   }
 }
+
+
+/**
+ * Override module-initialized process configuration with platform bindings.
+ * Values are deployment-wide constants in a Worker isolate and contain no
+ * database password; the Hyperdrive connection string is passed separately.
+ */
+export function configureRuntimeConfigFromBindings(values: {
+  env: Environment;
+  appUrl: string;
+  sessionSecret: string;
+  corsOrigins: string[];
+  emailFrom?: string;
+}): void {
+  config.env = values.env;
+  config.isProduction = values.env === 'production';
+  config.isDevelopment = values.env === 'development';
+  config.isTest = values.env === 'test';
+  config.appUrl = values.appUrl;
+  config.auth.sessionSecret = values.sessionSecret;
+  config.security.corsOrigins = values.corsOrigins;
+  config.email.from = values.emailFrom;
+}
