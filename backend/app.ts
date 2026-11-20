@@ -39,7 +39,9 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.set('trust proxy', options.trustProxy ?? false);
 
   app.use(requestIdMiddleware);
-  options.configureRuntime?.();
+  app.use((_req, _res, next) => {
+    try { options.configureRuntime?.(); next(); } catch (error) { next(error); }
+  });
   app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
