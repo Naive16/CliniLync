@@ -32,9 +32,11 @@ The database adapter must accept a Worker-provided Hyperdrive connection string 
 ## Database and credential boundary
 
 - Keep the current Supabase project and schema. Do not copy, reset, truncate, or migrate patient data to a new database.
-- Create a dedicated, least-privilege database login for the Worker rather than reusing an administrative Supabase credential. The existing migration 017 model uses a server-only application role with BYPASSRLS and relies on API-level authentication/tenant checks; any new login must be reviewed against that model and granted only the tables/sequences required. The credential must be created and stored through a secure dashboard/secret workflow; never paste it into chat, source control, a committed Wrangler file, or a GitHub issue.
-- Configure Hyperdrive to use the direct PostgreSQL endpoint and the dedicated login. Keep the connection string in the Hyperdrive resource, not in source.
-- Existing migration 017 intentionally revokes Data API access from `anon` and `authenticated` and uses a server-only application role. Preserve that model pending a separate review of application-level authentication and tenant isolation. BYPASSRLS is not a reason to expose the credential to browser code.
+- The existing `clinilync_app` role was verified as LOGIN, non-superuser, and BYPASSRLS. It is the server-only application role described by migration 017. Do not create another privileged login, change role attributes, or broaden grants as part of this hosting migration.
+- Before using `clinilync_app` from Hyperdrive, confirm its current grants are sufficient and securely provision its credential. Its BYPASSRLS attribute is highly privileged; preserve the existing API-level authentication and tenant-isolation controls and never expose this credential to browser code.
+- If the existing credential is unavailable or the role's privilege scope is not acceptable after review, stop for a separate database-security decision. Do not work around the blocker by creating a new BYPASSRLS role or changing the database security model.
+- Configure Hyperdrive against Supabase's direct PostgreSQL endpoint, not a Supabase pooler endpoint. Store the connection string in the Hyperdrive resource, not source control, and disable query caching for clinical, authentication, session, permission, and billing data.
+- Migration 017 intentionally revokes Data API access from `anon` and `authenticated` and uses a server-only application role. Preserve that model pending a separate review of application-level authentication and tenant isolation.
 - Do not add public Data API grants or broad RLS policies as part of this hosting migration.
 
 ## Required implementation and verification gates
@@ -47,9 +49,9 @@ The database adapter must accept a Worker-provided Hyperdrive connection string 
 6. **Clinical regression:** exercise patient, appointment, encounter, clinical note, observation, medication/prescription, allergy, billing, portal, administration, and subscription flows with synthetic test records only. Verify no data leaks across organizations.
 7. **Frontend and static assets:** build and serve the real Vite output through Workers Static Assets; verify SPA deep links and API routing.
 8. **Database safety:** compare migration history and schema before/after; confirm no startup schema changes or demo seeding; verify existing organisation/user/audit counts are unchanged.
-9. **Staging deployment:** deploy only after the Worker API is complete and a dedicated database login/Hyperdrive binding is ready. Use `https://clinilync-staging.kelvinmkanda01.workers.dev`; do not attach the production domain.
+9. **Staging deployment:** deploy only after the Worker API is complete, the existing database login has been reviewed, Hyperdrive is configured, and required secrets are set. Use `https://clinilync-staging.kelvinmkanda01.workers.dev`; do not attach the production domain.
 10. **Cutover:** only after all gates pass and the user separately confirms domain/DNS changes. Keep Render available for rollback until post-cutover verification is complete.
 
 ## Current status
 
-The migration branch now contains an initial Worker-hosted Express API and request-scoped Hyperdrive adapter, plus a CI dry-run build. These changes are not yet verified in the Workers runtime. The Hyperdrive binding and dedicated DB login are not configured, so the Worker must not be deployed yet. No production DNS, Render, or Supabase changes have been made.
+The migration branch now contains an initial Worker-hosted Express API and request-scoped Hyperdrive adapter, plus a CI dry-run build. These changes are not yet verified in the Workers runtime. The Hyperdrive binding and existing-role credential are not configured, so the Worker must not be deployed yet. No production DNS, Render, or Supabase changes have been made.
