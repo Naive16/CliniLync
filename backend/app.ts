@@ -70,6 +70,13 @@ export function createApp(options: CreateAppOptions = {}): Express {
     next();
   });
 
+  app.use('/api', (_req, res, next) => {
+    // Clinical and account API responses must never be cached by browsers or intermediaries.
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    next();
+  });
+
   app.get('/healthz', (_req, res) => {
     res.json({ status: 'healthy', service: 'CLINILYNC API', timestamp: new Date().toISOString() });
   });
