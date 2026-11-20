@@ -12,16 +12,11 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = ["/api/*", "/healthz"]
 
-# Required before deployment. Use the existing server-only `clinilync_app`
-# PostgreSQL login only after its privileges and credential have been reviewed
-# for this Worker. This role currently has BYPASSRLS; preserve migration 017's
-# security model and do not create another privileged role or broaden grants.
-# Use Supabase's direct database endpoint and disable Hyperdrive query caching
-# for clinical, session, permission, and billing data. Enter the connection
-# string only in Cloudflare's secure Hyperdrive workflow, never in this file.
-# [[hyperdrive]]
-# binding = "HYPERDRIVE"
-# id = "<create-and-configure-this-in-cloudflare>"
+# Existing Supabase PostgreSQL database. Hyperdrive credentials are stored
+# securely in Cloudflare and are intentionally not present in this file.
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "14656e8e20ec4b978b6c245769d4062e"
 
 # Set these as Worker secrets/vars, not in source control:
 # SESSION_SECRET (secret; >=32 chars)
