@@ -9,6 +9,7 @@ import { env } from 'cloudflare:workers';
 import { httpServerHandler } from 'cloudflare:node';
 import { createApp } from '../app.js';
 import { configureRuntimeConfigFromBindings } from '../config/index.js';
+import { enableWorkerDatabaseMode } from '../../database/db.js';
 
 interface HyperdriveBinding {
   connectionString: string;
@@ -24,6 +25,7 @@ interface Env {
 }
 
 const runtimeEnv = env as unknown as Env;
+enableWorkerDatabaseMode();
 
 const app = createApp({
   trustProxy: true,
