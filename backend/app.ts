@@ -20,9 +20,13 @@ import { portalRouter } from './api/portal.router.js';
 import { adminRouter } from './api/admin.router.js';
 import { orgsRouter } from './api/orgs.router.js';
 import { requireStaffAccount } from './middleware/auth.js';
+import { hyperdriveDatabaseMiddleware } from '../database/db.js';
 
 export interface CreateAppOptions {
   trustProxy?: boolean;
+  databaseConnectionString?: () => string;
+  configureRuntime?: () => void;
+  allowedOrigins?: () => string[];
 }
 
 /**
@@ -35,6 +39,7 @@ export function createApp(options: CreateAppOptions = {}): Express {
   app.set('trust proxy', options.trustProxy ?? false);
 
   app.use(requestIdMiddleware);
+  options.configureRuntime?.();
   app.use(cookieParser());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
@@ -46,6 +51,24 @@ export function createApp(options: CreateAppOptions = {}): Express {
     next();
   });
 
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const allowed = options.allowedOrigins?.() || [];
+    if (origin && allowed.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Vary', 'Origin');
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Organization-Id, X-Request-Id');
+    if (req.method === 'OPTIONS') { res.status(204).end(); return; }
+    next();
+  });
+
+  app.get('/healthz', (_req, res) => {
+    res.json({ status: 'healthy', service: 'CLINILYNC API', timestamp: new Date().toISOString() });
+  });
+
   app.get('/api/health', (_req, res) => {
     res.json({
       status: 'healthy',
@@ -54,6 +77,10 @@ export function createApp(options: CreateAppOptions = {}): Express {
       timestamp: new Date().toISOString()
     });
   });
+
+  if (options.databaseConnectionString) {
+    app.use('/api', hyperdriveDatabaseMiddleware(options.databaseConnectionString));
+  }
 
   app.use('/api/v1', v1ApiRouter);
 
