@@ -13,7 +13,10 @@ not_found_handling = "single-page-application"
 run_worker_first = ["/api/*", "/healthz"]
 
 # Required before deployment. Create a Hyperdrive configuration against the
-# existing Supabase PostgreSQL database using a dedicated Worker DB role.
+# existing Supabase PostgreSQL database using a dedicated Worker DB role and
+# DISABLE Hyperdrive query caching (clinical records, sessions, permissions,
+# and billing state must always be read fresh). Use `wrangler hyperdrive create
+# clinilync-staging --connection-string='<PRIVATE_CONNECTION_STRING>' --caching-disabled`.
 # Never place the database password in this file or source control.
 # [[hyperdrive]]
 # binding = "HYPERDRIVE"
