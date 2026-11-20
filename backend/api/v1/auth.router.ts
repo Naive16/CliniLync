@@ -22,7 +22,8 @@ import { User, Organization } from '../../types/domain.js';
 export const v1AuthRouter = Router();
 
 // Constant dummy salt/hash for timing-safe comparison on invalid user emails
-const DUMMY_HASH = hashPassword('DummyTimingAttackMitigationKey123!');
+// Precomputed dummy PBKDF2 value avoids randomBytes() during Worker module initialization.
+const DUMMY_HASH = { hash: 'c5e14451caef6ade20857eb4a5e65db6c38bcc93bf609e881d28d55392318756a265168745c2ec1b3ad78cccdb66b35c2d3da328470806dedb53dd598e21c557', salt: 'clinilync-dummy-timing-salt-v1' };
 
 /**
  * Shared credential login handler. The account type is determined from the
