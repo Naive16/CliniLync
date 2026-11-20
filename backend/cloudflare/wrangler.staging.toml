@@ -21,6 +21,6 @@ run_worker_first = ["/api/*", "/healthz"]
 
 # Set these as Worker secrets/vars, not in source control:
 # SESSION_SECRET (secret; >=32 chars)
-# APP_URL (var; staging workers.dev URL or staging custom domain)
+# APP_URL (var; https://clinilync-staging.kelvinmkanda01.workers.dev)
 # CORS_ORIGINS (var; comma-separated allowed origins)
 # EMAIL_FROM (var; required by existing hosted config policy)
