@@ -2,7 +2,7 @@
  * CLINILYNC shared Express application.
  *
  * Route composition is deliberately separated from process startup so the
- * Node server and a future Cloudflare HTTP adapter can mount the same API.
+ * Node server and Cloudflare Workers HTTP adapter mount the same API.
  * This module must remain free of listen(), migrations, demo seeding, and
  * filesystem/static-file startup behavior.
  */
