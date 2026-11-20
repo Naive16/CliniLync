@@ -10,6 +10,7 @@
 import pg from 'pg';
 import fs from 'node:fs';
 import path from 'node:path';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 export interface QueryResult<T = Record<string, unknown>> {
   rows: T[];
@@ -570,10 +571,88 @@ class LivePostgresClient implements IDatabaseClient {
   }
 }
 
-// Global Singleton Instance
+// Node runtimes use one process-level adapter. Cloudflare requests use an
+// AsyncLocalStorage-scoped client so concurrent requests never share a Client.
+const requestDatabaseContext = new AsyncLocalStorage<IDatabaseClient>();
+
+// Global singleton is retained only for the traditional Node server.
 let dbInstance: IDatabaseClient | null = null;
 
+class RequestPostgresClient implements IDatabaseClient {
+  constructor(private readonly client: pg.Client) {}
+
+  isLivePostgres(): boolean { return true; }
+
+  async query<T = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<QueryResult<T>> {
+    const result = await this.client.query(text, params);
+    return { rows: result.rows as T[], rowCount: result.rowCount ?? result.rows.length };
+  }
+
+  async transaction<T>(callback: (client: IDatabaseClient) => Promise<T>): Promise<T> {
+    await this.client.query('BEGIN');
+    const transactionClient: IDatabaseClient = {
+      query: async <R = Record<string, unknown>>(text: string, params: unknown[] = []) => {
+        const result = await this.client.query(text, params);
+        return { rows: result.rows as R[], rowCount: result.rowCount ?? result.rows.length };
+      },
+      transaction: async () => { throw new Error('Nested transactions are not supported'); },
+      close: async () => {},
+      isLivePostgres: () => true
+    };
+    try {
+      const value = await callback(transactionClient);
+      await this.client.query('COMMIT');
+      return value;
+    } catch (error) {
+      await this.client.query('ROLLBACK');
+      throw error;
+    }
+  }
+
+  async close(): Promise<void> {
+    await this.client.end();
+  }
+}
+
+/**
+ * Express middleware for a Cloudflare Hyperdrive-backed request.
+ * A fresh pg.Client is created for each invocation; Hyperdrive owns the
+ * reusable origin connection pool. The AsyncLocalStorage scope keeps the
+ * current request's DB client isolated from concurrent requests.
+ */
+export function hyperdriveDatabaseMiddleware(connectionString: () => string) {
+  return async (_req: import('express').Request, res: import('express').Response, next: import('express').NextFunction): Promise<void> => {
+    const url = connectionString();
+    if (!url) {
+      next(new Error('Cloudflare Hyperdrive binding is missing; refusing to use local or in-memory storage.'));
+      return;
+    }
+
+    const client = new pg.Client({ connectionString: url, application_name: 'clinilync-cloudflare-worker' });
+    try {
+      await client.connect();
+    } catch (error) {
+      next(error as Error);
+      return;
+    }
+
+    const requestClient = new RequestPostgresClient(client);
+    let closing: Promise<void> | undefined;
+    const close = () => {
+      closing ||= requestClient.close().catch(error => {
+        console.error('[CLINILYNC] Failed to close request database client:', error);
+      });
+    };
+    res.once('finish', close);
+    res.once('close', close);
+
+    requestDatabaseContext.run(requestClient, () => next());
+  };
+}
+
 export function getDatabaseClient(): IDatabaseClient {
+  const requestClient = requestDatabaseContext.getStore();
+  if (requestClient) return requestClient;
   if (dbInstance) return dbInstance;
 
   const runtime = (process.env.NODE_ENV || 'development').toLowerCase();
