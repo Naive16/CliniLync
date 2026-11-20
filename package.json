@@ -15,7 +15,8 @@
     "test:postgres": "tsx tests/postgres-preflight.ts",
     "test:postgres:clean": "tsx tests/postgres-preflight.ts --clean",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "patch:cloudflare": "bun scripts/patch-cloudflare-deps.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
