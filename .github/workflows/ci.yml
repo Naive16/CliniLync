@@ -2,7 +2,7 @@ name: CLINILYNC CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, migration/cloudflare-workers-staging]
   pull_request:
     branches: [main, master]
 
@@ -32,3 +32,6 @@ jobs:
 
       - name: Build frontend distribution
         run: bun run build
+
+      - name: Validate Cloudflare Worker bundle (dry run)
+        run: bunx wrangler@4 deploy --dry-run --outdir /tmp/clinilync-worker-dry-run --config backend/cloudflare/wrangler.staging.toml
