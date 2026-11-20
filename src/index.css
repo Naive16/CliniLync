@@ -1342,3 +1342,92 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .cl-home-dashboard { grid-template-columns: 145px minmax(0,1fr); }
   .cl-home-dashboard-content { padding: 15px; }
 }
+
+
+/* Unified public authentication and onboarding surfaces: match the light workspace UI. */
+.clinilync-auth-page.cl-login-page-clean,
+.cl-onboarding-page {
+  min-height: 100dvh;
+  padding: clamp(20px, 4vw, 48px);
+  align-items: center;
+  justify-content: center;
+  color: var(--cl-navy);
+  background: var(--cl-surface, #F5F7F6);
+}
+.clinilync-auth-card.cl-login-card-clean {
+  display: block;
+  width: min(100%, 560px);
+  min-height: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.clinilync-auth-form.cl-login-form-clean {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: clamp(28px, 5vw, 56px);
+  overflow: visible;
+  background: var(--cl-white, #FFFFFF);
+  border: 1px solid var(--cl-border, #E3E9E5);
+  border-radius: var(--cl-radius-lg, 16px);
+  box-shadow: var(--cl-shadow-sm, 0 12px 32px rgba(20,35,27,.08));
+}
+.cl-login-content { width: min(100%, 410px); margin: 0 auto; }
+.cl-login-brand-lockup { margin-bottom: 42px; }
+.cl-login-page-clean .cl-login-desktop-intro { display: none !important; }
+
+.cl-onboarding-page .cl-onboarding-shell {
+  display: grid;
+  grid-template-columns: minmax(220px, .72fr) minmax(0, 1.28fr);
+  width: min(1080px, 100%);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--cl-white, #FFFFFF);
+  border: 1px solid var(--cl-border, #E3E9E5);
+  border-radius: var(--cl-radius-lg, 16px);
+  box-shadow: var(--cl-shadow-sm, 0 12px 32px rgba(20,35,27,.08));
+}
+.cl-onboarding-page .cl-onboarding-intro {
+  color: var(--cl-navy);
+  background: #F0F6F2;
+}
+.cl-onboarding-page .cl-onboarding-intro::before,
+.cl-onboarding-page .cl-onboarding-intro::after { background: rgba(4,120,87,.06); }
+.cl-onboarding-page .cl-onboarding-brand,
+.cl-onboarding-page .cl-onboarding-intro h1 { color: var(--cl-navy); }
+.cl-onboarding-page .cl-onboarding-brand .clinilync-brand-mark {
+  color: #047857;
+  background: #E4F3EA;
+}
+.cl-onboarding-page .cl-onboarding-intro .cl-onboarding-eyebrow,
+.cl-onboarding-page .cl-onboarding-benefits svg { color: #047857; }
+.cl-onboarding-page .cl-onboarding-intro-copy > p:not(.cl-onboarding-eyebrow),
+.cl-onboarding-page .cl-onboarding-benefits li,
+.cl-onboarding-page .cl-onboarding-intro-note { color: #596B61; }
+.cl-onboarding-page .cl-onboarding-intro-note { border-color: #DCE8E0; }
+.cl-onboarding-page .cl-onboarding-main { background: var(--cl-white, #FFFFFF); }
+
+.cl-onboarding-credentials {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 16px;
+  background: #F6F9F7;
+  border: 1px solid #DDE8E1;
+  border-radius: 10px;
+}
+.cl-onboarding-credentials > div { display: grid; gap: 5px; }
+.cl-onboarding-credentials span { color: #65746B; font-size: 11px; font-weight: 650; }
+.cl-onboarding-credentials strong { color: #17231C; font-size: 14px; overflow-wrap: anywhere; }
+.cl-onboarding-credentials .cl-onboarding-temp-password { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .02em; }
+@media (max-width: 767px) {
+  .clinilync-auth-page.cl-login-page-clean,
+  .cl-onboarding-page { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+  .clinilync-auth-form.cl-login-form-clean { padding: 28px 22px; }
+  .cl-onboarding-page .cl-onboarding-shell { display: flex; flex-direction: column; }
+  .cl-onboarding-page .cl-onboarding-intro { padding: 24px 22px; }
+  .cl-onboarding-page .cl-onboarding-main { padding: 28px 22px; }
+}
