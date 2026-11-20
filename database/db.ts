@@ -577,6 +577,12 @@ const requestDatabaseContext = new AsyncLocalStorage<IDatabaseClient>();
 
 // Global singleton is retained only for the traditional Node server.
 let dbInstance: IDatabaseClient | null = null;
+let workerDatabaseMode = false;
+
+/** Prevent background code outside an active request from falling back to local storage. */
+export function enableWorkerDatabaseMode(): void {
+  workerDatabaseMode = true;
+}
 
 class RequestPostgresClient implements IDatabaseClient {
   private activeOperations = 0;
@@ -683,6 +689,9 @@ export function runWithRequestDatabaseClient<T>(client: IDatabaseClient, callbac
 export function getDatabaseClient(): IDatabaseClient {
   const requestClient = requestDatabaseContext.getStore();
   if (requestClient) return requestClient;
+  if (workerDatabaseMode) {
+    throw new Error('Cloudflare Worker database access requires an active request-scoped Hyperdrive connection.');
+  }
   if (dbInstance) return dbInstance;
 
   const runtime = (process.env.NODE_ENV || 'development').toLowerCase();
