@@ -3,7 +3,7 @@ import { IDatabaseClient, QueryResult, getDatabaseClient, runWithRequestDatabase
 function fakeClient(label: string): IDatabaseClient {
   return {
     async query<T = Record<string, unknown>>(): Promise<QueryResult<T>> {
-      return { rows: [{ label } as T], rowCount: 1 };
+      return { rows: [{ label } as unknown as T], rowCount: 1 };
     },
     async transaction<T>(callback: (client: IDatabaseClient) => Promise<T>): Promise<T> {
       return callback(this);
