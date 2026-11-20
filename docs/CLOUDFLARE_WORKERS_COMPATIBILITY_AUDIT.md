@@ -71,7 +71,7 @@ The current CI suite validates existing Node behavior. It does not yet test:
 3. **Implemented in this branch:** added a per-request `pg.Client` Hyperdrive adapter, AsyncLocalStorage request isolation, transaction support, in-flight query draining, and fail-closed behavior when no request-scoped Worker DB context exists. Needs CI and real Hyperdrive runtime verification.
 4. **Partially implemented:** added Cloudflare binding-to-config injection and explicit Worker runtime mode. The session store's synchronous in-memory map remains for non-HTTP/test paths; HTTP auth uses PostgreSQL async methods. Confirm all routes and background tasks do not depend on process-local state.
 5. **Partially implemented:** added a concurrent request-context isolation regression test and a Wrangler dry-run bundle step to CI. Both must pass; actual Worker runtime/cookie/clinical tests are still required.
-6. Deploy to the `workers.dev` staging hostname only after a dedicated database login and Hyperdrive binding are configured.
+6. Deploy to the `workers.dev` staging hostname only after a existing database login is reviewed and the Hyperdrive binding is configured.
 7. Run synthetic clinical and security regression tests. Compare database migration ledger and selected baseline counts before/after.
 8. Only then request a separate production domain/DNS cutover approval. Keep Render intact for rollback.
 
@@ -79,7 +79,9 @@ The current CI suite validates existing Node behavior. It does not yet test:
 
 - Keep the existing Supabase project and schema; no data copy or reset is required.
 - No credentials belong in source control or chat.
-- Use a dedicated database login for the Worker, stored in Hyperdrive. Do not reuse an administrative password. Create the Hyperdrive configuration with query caching disabled (`--caching-disabled`); Hyperdrive caches eligible SELECT results by default and does not invalidate cached reads after writes, which is unsuitable for clinical, session, permission, and billing data.
+- The existing `clinilync_app` role was verified as LOGIN, non-superuser, and BYPASSRLS. Preserve migration 017's server-only application access model; do not create another privileged login or broaden grants as a shortcut.
+- Before using the existing role from Hyperdrive, review its current grants and privilege scope and securely provision its credential. If the credential is unavailable or the role is not acceptable after review, stop for a separate database-security decision; do not bypass this by creating another privileged role.
+- Configure Hyperdrive against Supabase's direct PostgreSQL endpoint, not a Supabase pooler endpoint. Disable query caching for clinical, authentication, session, permission, and billing data; Hyperdrive caches eligible SELECT results by default and does not invalidate cached reads after writes.
 - Preserve the existing server-only Supabase access model. Do not enable public Data API grants or add broad RLS policies as a shortcut.
 - Do not deploy a placeholder Worker, a gateway that returns 503 for API routes, or a partially mounted clinical API.
 
@@ -93,7 +95,7 @@ The current CI suite validates existing Node behavior. It does not yet test:
 | App factory extracted | Implemented in migration branch; CI verification pending |
 | Request-scoped Hyperdrive database adapter | Implemented in branch; CI and live binding verification pending |
 | Worker runtime dependency audit/tests | Isolation test and Wrangler dry-run added; results pending |
-| Dedicated Worker DB login / Hyperdrive binding | Not configured |
+| Existing clinilync_app credential / Hyperdrive binding | Not configured |
 | Cloudflare staging deployment | Not deployed |
 | Production cutover | Not authorised/performed |
 
