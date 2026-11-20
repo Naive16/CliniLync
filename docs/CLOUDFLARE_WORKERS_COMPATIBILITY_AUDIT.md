@@ -79,7 +79,7 @@ The current CI suite validates existing Node behavior. It does not yet test:
 
 - Keep the existing Supabase project and schema; no data copy or reset is required.
 - No credentials belong in source control or chat.
-- Use a dedicated database login for the Worker, stored in Hyperdrive. Do not reuse an administrative password.
+- Use a dedicated database login for the Worker, stored in Hyperdrive. Do not reuse an administrative password. Create the Hyperdrive configuration with query caching disabled (`--caching-disabled`); Hyperdrive caches eligible SELECT results by default and does not invalidate cached reads after writes, which is unsuitable for clinical, session, permission, and billing data.
 - Preserve the existing server-only Supabase access model. Do not enable public Data API grants or add broad RLS policies as a shortcut.
 - Do not deploy a placeholder Worker, a gateway that returns 503 for API routes, or a partially mounted clinical API.
 
