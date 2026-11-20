@@ -579,37 +579,63 @@ const requestDatabaseContext = new AsyncLocalStorage<IDatabaseClient>();
 let dbInstance: IDatabaseClient | null = null;
 
 class RequestPostgresClient implements IDatabaseClient {
+  private activeOperations = 0;
+  private closing = false;
+  private drainWaiters: Array<() => void> = [];
+
   constructor(private readonly client: pg.Client) {}
 
   isLivePostgres(): boolean { return true; }
 
-  async query<T = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<QueryResult<T>> {
-    const result = await this.client.query(text, params);
-    return { rows: result.rows as T[], rowCount: result.rowCount ?? result.rows.length };
-  }
-
-  async transaction<T>(callback: (client: IDatabaseClient) => Promise<T>): Promise<T> {
-    await this.client.query('BEGIN');
-    const transactionClient: IDatabaseClient = {
-      query: async <R = Record<string, unknown>>(text: string, params: unknown[] = []) => {
-        const result = await this.client.query(text, params);
-        return { rows: result.rows as R[], rowCount: result.rowCount ?? result.rows.length };
-      },
-      transaction: async () => { throw new Error('Nested transactions are not supported'); },
-      close: async () => {},
-      isLivePostgres: () => true
-    };
+  private async run<T>(operation: () => Promise<T>): Promise<T> {
+    if (this.closing) throw new Error('Request database client is closing.');
+    this.activeOperations++;
     try {
-      const value = await callback(transactionClient);
-      await this.client.query('COMMIT');
-      return value;
-    } catch (error) {
-      await this.client.query('ROLLBACK');
-      throw error;
+      return await operation();
+    } finally {
+      this.activeOperations--;
+      if (this.closing && this.activeOperations === 0) {
+        for (const resolve of this.drainWaiters.splice(0)) resolve();
+      }
     }
   }
 
+  async query<T = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<QueryResult<T>> {
+    return this.run(async () => {
+      const result = await this.client.query(text, params);
+      return { rows: result.rows as T[], rowCount: result.rowCount ?? result.rows.length };
+    });
+  }
+
+  async transaction<T>(callback: (client: IDatabaseClient) => Promise<T>): Promise<T> {
+    return this.run(async () => {
+      await this.client.query('BEGIN');
+      const transactionClient: IDatabaseClient = {
+        query: async <R = Record<string, unknown>>(text: string, params: unknown[] = []) => {
+          const result = await this.client.query(text, params);
+          return { rows: result.rows as R[], rowCount: result.rowCount ?? result.rows.length };
+        },
+        transaction: async () => { throw new Error('Nested transactions are not supported'); },
+        close: async () => {},
+        isLivePostgres: () => true
+      };
+      try {
+        const value = await callback(transactionClient);
+        await this.client.query('COMMIT');
+        return value;
+      } catch (error) {
+        await this.client.query('ROLLBACK');
+        throw error;
+      }
+    });
+  }
+
   async close(): Promise<void> {
+    if (this.closing) return;
+    this.closing = true;
+    if (this.activeOperations > 0) {
+      await new Promise<void>(resolve => this.drainWaiters.push(resolve));
+    }
     await this.client.end();
   }
 }
