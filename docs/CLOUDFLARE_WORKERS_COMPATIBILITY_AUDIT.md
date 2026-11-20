@@ -66,7 +66,7 @@ The current CI suite validates existing Node behavior. It does not yet test:
 
 ## Required implementation order
 
-1. Extract `createApp(options)` from `server.ts`; keep Node bootstrap separate.
+1. **Completed in this branch:** extracted `createApp(options)` into `backend/app.ts`; `server.ts` now owns Node bootstrap, seed/migration policy, Vite/static hosting, listening, and shutdown. This extraction still requires CI and runtime verification.
 2. Add a Worker-only entry using the documented `cloudflare:node` / `httpServerHandler` integration. Mount the same Express app; do not proxy API requests to a second origin.
 3. Replace implicit global database selection with explicit request-scoped injection. Build a Hyperdrive-backed adapter with `pg` that supports parameterized queries, transactions, and guaranteed release/cleanup. Missing binding must fail closed.
 4. Introduce explicit runtime config injection and audit all process-local caches/state.
@@ -90,7 +90,7 @@ The current CI suite validates existing Node behavior. It does not yet test:
 | Existing Node CI on preparation commit | Passed |
 | Express-on-Workers platform support confirmed | Confirmed from Cloudflare docs |
 | Existing `pg` version meets Hyperdrive minimum | Confirmed from repository manifest |
-| App factory extracted | Not started |
+| App factory extracted | Implemented in migration branch; CI verification pending |
 | Request-scoped Hyperdrive database adapter | Not started |
 | Worker runtime dependency audit/tests | Not started |
 | Dedicated Worker DB login / Hyperdrive binding | Not configured |
