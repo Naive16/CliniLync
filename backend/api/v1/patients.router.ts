@@ -58,40 +58,44 @@ v1PatientsRouter.get('/', requirePermission(Permissions.PATIENT_VIEW), async (re
   const context = req.securityContext!;
   const db = getDatabaseClient();
 
-  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  const search = typeof req.query.search === 'string' ? req.query.search.trim().toLowerCase() : '';
   const statusFilter = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : 'ACTIVE';
   const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 20));
 
-  // Base query strictly filtered to user's active organization
-  const query = 'SELECT * FROM patients WHERE organization_id = $1 ORDER BY created_at DESC';
-  const result = await db.query<Patient>(query, [context.activeOrganization.id]);
-
-  let rows = result.rows;
-
-  // Apply lifecycle status filter unless ALL requested
+  // Filter and paginate in PostgreSQL. The old implementation loaded every
+  // patient row into Worker memory, filtered it in JavaScript, then sliced it.
+  const params: unknown[] = [context.activeOrganization.id];
+  const filters = ['organization_id = $1'];
   if (statusFilter !== 'ALL') {
-    rows = rows.filter(p => (p.status || (p.is_active ? 'ACTIVE' : 'INACTIVE')) === statusFilter);
+    params.push(statusFilter);
+    filters.push(`COALESCE(status, CASE WHEN is_active THEN 'ACTIVE' ELSE 'INACTIVE' END) = $${params.length}`);
   }
-
-  // Apply search across full name, MRN, email, phone
   if (search) {
-    const s = search.toLowerCase();
-    rows = rows.filter(p => 
-      p.first_name.toLowerCase().includes(s) || 
-      p.last_name.toLowerCase().includes(s) || 
-      `${p.first_name.toLowerCase()} ${p.last_name.toLowerCase()}`.includes(s) ||
-      p.mrn.toLowerCase().includes(s) ||
-      (p.email && p.email.toLowerCase().includes(s)) ||
-      (p.phone && p.phone.toLowerCase().includes(s))
-    );
+    params.push(`%${search}%`);
+    const searchParam = `$${params.length}`;
+    filters.push(`(
+      LOWER(first_name || ' ' || last_name) LIKE ${searchParam}
+      OR LOWER(mrn) LIKE ${searchParam}
+      OR LOWER(COALESCE(email, '')) LIKE ${searchParam}
+      OR LOWER(COALESCE(phone, '')) LIKE ${searchParam}
+    )`);
   }
-
-  const total = rows.length;
+  params.push(limit);
+  const limitParam = `$${params.length}`;
+  params.push((page - 1) * limit);
+  const offsetParam = `$${params.length}`;
+  const result = await db.query<Patient & { total_count: number }>(
+    `SELECT patients.*, COUNT(*) OVER()::int AS total_count
+     FROM patients
+     WHERE ${filters.join(' AND ')}
+     ORDER BY created_at DESC
+     LIMIT ${limitParam} OFFSET ${offsetParam}`,
+    params
+  );
+  const total = Number(result.rows[0]?.total_count || 0);
+  const paginatedPatients = result.rows.map(({ total_count, ...patient }) => patient as Patient);
   const totalPages = Math.ceil(total / limit) || 1;
-  const startIndex = (page - 1) * limit;
-  const paginatedPatients = rows.slice(startIndex, startIndex + limit);
-
   // Server-side audit logging
   AuditService.logEvent({
     organizationId: context.activeOrganization.id,
