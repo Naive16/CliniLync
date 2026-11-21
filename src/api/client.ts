@@ -144,10 +144,11 @@ class ApiClient {
     return this.request<{
       active: boolean;
       user: { id: string; email: string; firstName: string; lastName: string; isSuperAdmin: boolean };
-      activeOrganization: { id: string; name: string };
+      activeOrganization: { id: string; name: string; currency_code: string; timezone: string; country_code?: string; region?: string | null; city?: string | null; address_line1?: string | null; postal_code?: string | null; phone?: string | null; email?: string | null; onboarding_status?: string; onboarding_step?: number; onboarding_admin_user_id?: string | null };
       roles: { id: string; name: string; code: string }[];
       permissions: string[];
-      expiresAt: string;
+      availableOrganizations: { id: string; name: string; currency_code: string; timezone: string; country_code?: string; region?: string | null; city?: string | null; address_line1?: string | null; postal_code?: string | null; phone?: string | null; email?: string | null; onboarding_status?: string; onboarding_step?: number; onboarding_admin_user_id?: string | null }[];
+      expiresAt: string | null;
     }>('/api/v1/auth/session');
   }
 
