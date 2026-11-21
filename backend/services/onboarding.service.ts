@@ -78,50 +78,69 @@ export async function getOnboardingState(organizationId: string, userId?: string
   const orgResult = await db.query<Organization>('SELECT * FROM organizations WHERE id = $1', [organizationId]);
   const organization = orgResult.rows[0];
   if (!organization) return null;
-  const stepResult = await db.query<any>('SELECT step_key, completed_at, metadata FROM organization_onboarding_steps WHERE organization_id = $1', [organizationId]);
+
+  // Fetch each onboarding collection in parallel and use joins to avoid
+  // per-invitation/per-member database round trips on every page load.
+  const [stepResult, departments, invitations, organizationUsers] = await Promise.all([
+    db.query<any>(
+      'SELECT step_key, completed_at, metadata FROM organization_onboarding_steps WHERE organization_id = $1',
+      [organizationId],
+    ),
+    db.query<any>(
+      'SELECT * FROM departments WHERE organization_id = $1 AND is_active = TRUE ORDER BY name ASC',
+      [organizationId],
+    ),
+    db.query<any>(
+      `SELECT i.*, r.code AS role_code, r.name AS role_name
+       FROM organization_invitations i
+       LEFT JOIN roles r ON r.id = i.role_id
+       WHERE i.organization_id = $1 AND i.accepted_at IS NULL AND i.revoked_at IS NULL
+       ORDER BY i.created_at DESC`,
+      [organizationId],
+    ),
+    db.query<any>(
+      `SELECT u.id, u.email, u.first_name, u.last_name, u.status, u.is_super_admin,
+              r.code AS role_code, r.name AS role_name
+       FROM user_organizations m
+       JOIN users u ON u.id = m.user_id
+       LEFT JOIN roles r ON r.id = m.role_id
+       WHERE m.organization_id = $1 AND m.status = $2
+         AND u.status = $3 AND u.is_super_admin = FALSE
+         AND (r.code IS NULL OR r.code <> $4)
+       ORDER BY u.last_name ASC, u.first_name ASC`,
+      [organizationId, 'ACTIVE', 'ACTIVE', 'PATIENT'],
+    ),
+  ]);
+
   const completed = new Set(stepResult.rows.filter((row) => row.completed_at).map((row) => String(row.step_key)));
-  const departments = await db.query<any>('SELECT * FROM departments WHERE organization_id = $1 AND is_active = TRUE ORDER BY name ASC', [organizationId]);
-  const rawInvitations = await db.query<any>(
-    'SELECT * FROM organization_invitations WHERE organization_id = $1 AND accepted_at IS NULL AND revoked_at IS NULL ORDER BY created_at DESC',
-    [organizationId],
-  );
-  const invitations = { rows: await Promise.all(rawInvitations.rows.map(async (invitation) => {
-    const role = await db.query<any>('SELECT code, name FROM roles WHERE id = $1', [invitation.role_id]);
-    return { ...invitation, role_code: role.rows[0]?.code || '', role_name: role.rows[0]?.name || '' };
-  })) };
-  const memberships = await db.query<any>('SELECT * FROM user_organizations WHERE organization_id = $1 AND status = $2', [organizationId, 'ACTIVE']);
-  const organizationUsers = { rows: [] as any[] };
-  for (const membership of memberships.rows) {
-    const userResult = await db.query<any>('SELECT id, email, first_name, last_name, status, is_super_admin FROM users WHERE id = $1', [membership.user_id]);
-    const role = await db.query<any>('SELECT code, name FROM roles WHERE id = $1', [membership.role_id]);
-    const user = userResult.rows[0];
-    if (user && user.status === 'ACTIVE' && !user.is_super_admin && role.rows[0]?.code !== 'PATIENT') {
-      organizationUsers.rows.push({ ...user, role_code: role.rows[0]?.code || '', role_name: role.rows[0]?.name || '' });
-    }
-  }
-  organizationUsers.rows.sort((a, b) => String(a.last_name).localeCompare(String(b.last_name)) || String(a.first_name).localeCompare(String(b.first_name)));
   // Email verification is an organization onboarding requirement. Always check
-  // the designated onboarding administrator, including during activation where
-  // there may be no requesting userId available.
+  // the designated onboarding administrator, including during activation.
   const verificationUserId = organization.onboarding_admin_user_id || userId;
   const verified = verificationUserId
-    ? (await db.query<{ email_verified_at: string | null }>('SELECT email_verified_at FROM users WHERE id = $1', [verificationUserId])).rows[0]?.email_verified_at != null
+    ? (await db.query<{ email_verified_at: string | null }>(
+        'SELECT email_verified_at FROM users WHERE id = $1',
+        [verificationUserId],
+      )).rows[0]?.email_verified_at != null
     : false;
+
   const pendingDepartmentAdminIds = new Set(invitations.rows
-    .filter((row) => row.role_code === 'DEPARTMENT_ADMIN' && new Date(String(row.expires_at)).getTime() > Date.now() && row.department_id)
+    .filter((row) => row.role_code === 'DEPARTMENT_ADMIN'
+      && new Date(String(row.expires_at)).getTime() > Date.now()
+      && row.department_id)
     .map((row) => String(row.department_id)));
+
   const missing: string[] = [];
   if (!verified) missing.push(OnboardingStep.VERIFY_EMAIL);
   if (!completed.has(OnboardingStep.PROFILE) || !organization.country_code || !organization.city || !organization.currency_code || !organization.timezone) missing.push(OnboardingStep.PROFILE);
   if (!completed.has(OnboardingStep.DEPARTMENTS) || departments.rows.length === 0) missing.push(OnboardingStep.DEPARTMENTS);
-  // Department administrators may be assigned now or deferred. The organization
-  // owner remains responsible for the department until a separate administrator is added.
+  // Department administrators may be assigned now or deferred.
   if (!completed.has(OnboardingStep.DEPARTMENT_ADMINISTRATORS)
     && departments.rows.some((department) => !department.administrator_user_id && !pendingDepartmentAdminIds.has(String(department.id)))) {
     missing.push(OnboardingStep.DEPARTMENT_ADMINISTRATORS);
   }
   if (!completed.has(OnboardingStep.STAFF_INVITATIONS)) missing.push(OnboardingStep.STAFF_INVITATIONS);
   if (!organization.onboarding_admin_user_id) missing.push(OnboardingStep.REGISTER);
+
   return {
     status: organization.onboarding_status || OnboardingStatus.ACTIVE,
     currentStep: Number(organization.onboarding_step || 7),
