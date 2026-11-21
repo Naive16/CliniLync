@@ -374,7 +374,8 @@ function onboardingAdministratorOnly(req: AuthenticatedRequest, res: Response): 
 
 v1OnboardingRouter.get('/state', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const context = req.securityContext!;
-  const state = await getOnboardingState(context.activeOrganization.id, context.user.id);
+  const includeOrganizationUsers = req.query.includeOrganizationUsers === 'true';
+  const state = await getOnboardingState(context.activeOrganization.id, context.user.id, includeOrganizationUsers);
   if (!state) {
     res.status(404).json({ error: { code: 'ORGANIZATION_NOT_FOUND', message: 'Organization onboarding state was not found.' } });
     return;
