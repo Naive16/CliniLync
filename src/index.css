@@ -207,7 +207,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .clinilync-shell { min-height: 100vh; background: var(--cl-surface); color: var(--cl-navy); }
-.clinilync-main { margin-left: var(--cl-sidebar-width); min-height: 100vh; min-width: 0; transition: margin-left 220ms cubic-bezier(.2,.8,.2,1); }
+.clinilync-main { margin-left: var(--cl-sidebar-width); min-height: 100vh; min-width: 0; transition: margin-left 260ms cubic-bezier(.22,.61,.36,1); }
 .clinilync-shell.is-sidebar-collapsed .clinilync-main { margin-left: var(--cl-sidebar-collapsed-width); }
 .clinilync-content { min-height: calc(100vh - var(--cl-topbar-height)); overflow-x: hidden; }
 
@@ -604,13 +604,36 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .clinilync-sidebar.is-collapsed { width: var(--cl-sidebar-collapsed-width); }
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-brand-row { justify-content: center; padding-inline: 10px; }
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-brand { justify-content: center; flex: 0 0 auto; padding-inline: 0; }
+/* Prevent text from participating in the narrow-rail layout during animation. */
+.clinilync-sidebar > * { min-width: 0; }
+.clinilync-sidebar.is-collapsed .clinilync-nav-item > span:not(.clinilync-nav-tooltip) {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-brand > span:last-child,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-section-label,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-context,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-account-organization,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-account .clinilync-sidebar-role-switcher,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-user-copy,
-  .clinilync-sidebar.is-collapsed .clinilync-sidebar-signout .clinilync-signout-label { display: none; }
+.clinilync-sidebar.is-collapsed .clinilync-sidebar-signout .clinilync-signout-label {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 100ms ease, visibility 0s linear 100ms;
+}
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-brand > span:last-child,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-section-label,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-account-organization,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-account .clinilync-sidebar-role-switcher,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-user-copy,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-signout .clinilync-signout-label {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 140ms ease 80ms, visibility 0s linear 80ms;
+}
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-nav { padding-inline: 12px; }
 .clinilync-sidebar.is-collapsed .clinilync-nav-item { justify-content: center; padding-inline: 0; border-left: 0; }
 .clinilync-sidebar.is-collapsed .clinilync-nav-item.is-active { border-left: 0; }
