@@ -155,14 +155,7 @@ function AppContent() {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-600">
-        <div className="flex items-center gap-3 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
-          <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-semibold">Checking your session...</span>
-        </div>
-      </div>
-    );
+    return <AppLoadingFallback />;
   }
 
   // Public onboarding routes stay outside the authenticated shell.
@@ -330,11 +323,9 @@ function AppContent() {
 }
 
 const AppLoadingFallback: React.FC = () => (
-  <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-600">
-    <div className="flex items-center gap-3 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
-      <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-      <span className="text-xs font-semibold">Opening workspace...</span>
-    </div>
+  <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-slate-600" role="status" aria-live="polite">
+    <div className="cl-ui-spinner" aria-hidden="true" />
+    <span className="text-xs font-semibold">Loading your workspace...</span>
   </div>
 );
 
