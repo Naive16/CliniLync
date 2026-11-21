@@ -198,8 +198,9 @@ class ApiClient {
     });
   }
 
-  async v1GetOnboardingState() {
-    return this.request<any>('/api/v1/onboarding/state');
+  async v1GetOnboardingState(includeOrganizationUsers = false) {
+    const query = includeOrganizationUsers ? '?includeOrganizationUsers=true' : '';
+    return this.request<any>(`/api/v1/onboarding/state${query}`);
   }
 
   async v1CreateOnboardingDepartment(payload: { name: string; code: string }) {
