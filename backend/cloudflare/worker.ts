@@ -21,6 +21,9 @@ interface Env {
   SESSION_SECRET?: string;
   CORS_ORIGINS?: string;
   EMAIL_FROM?: string;
+  EMAIL_PROVIDER?: 'resend' | 'webhook' | 'none';
+  RESEND_API_KEY?: string;
+  EMAIL_WEBHOOK_URL?: string;
   HYPERDRIVE?: HyperdriveBinding;
 }
 
@@ -40,7 +43,10 @@ const app = createApp({
       appUrl: runtimeEnv.APP_URL || 'https://clinilync-staging.kelvinmkanda01.workers.dev',
       sessionSecret: secret,
       corsOrigins: (runtimeEnv.CORS_ORIGINS || runtimeEnv.APP_URL || '').split(',').map(value => value.trim()).filter(Boolean),
-      emailFrom: runtimeEnv.EMAIL_FROM
+      emailFrom: runtimeEnv.EMAIL_FROM,
+      emailProvider: runtimeEnv.EMAIL_PROVIDER || 'none',
+      emailApiKey: runtimeEnv.RESEND_API_KEY,
+      emailWebhookUrl: runtimeEnv.EMAIL_WEBHOOK_URL
     });
   },
   allowedOrigins: () => (runtimeEnv.CORS_ORIGINS || runtimeEnv.APP_URL || '').split(',').map(value => value.trim()).filter(Boolean)
