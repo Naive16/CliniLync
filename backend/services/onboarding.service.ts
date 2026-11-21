@@ -73,7 +73,7 @@ export async function markOnboardingStep(
   }
 }
 
-export async function getOnboardingState(organizationId: string, userId?: string, includeOrganizationUsers = true) {
+export async function getOnboardingState(organizationId: string, userId?: string, includeOrganizationUsers = false) {
   const db = getDatabaseClient();
 
   // Load the complete onboarding snapshot in one PostgreSQL round trip.
@@ -190,7 +190,7 @@ export async function getOnboardingState(organizationId: string, userId?: string
     organization: snapshot,
     departments,
     pendingInvitations,
-    organizationUsers,
+    ...(includeOrganizationUsers ? { organizationUsers } : {}),
   };
 }
 
