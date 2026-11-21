@@ -6,7 +6,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { sessionManager } from '../security/session.js';
+import { sessionManager, hashSessionToken } from '../security/session.js';
 import { getDatabaseClient } from '../../database/db.js';
 import { SecurityContext, Role, Organization, User } from '../types/domain.js';
 import { AuditService } from '../security/audit.js';
@@ -37,27 +37,75 @@ export async function authenticateToken(
     return;
   }
 
-  const session = await sessionManager.getSessionAsync(token);
-  if (!session) {
-    res.status(401).json({
-      error: {
-        code: 'UNAUTHORIZED_SESSION_EXPIRED',
-        message: 'Session has expired or is invalid. Please sign in again.'
-      }
-    });
-    return;
-  }
-
   try {
     const db = getDatabaseClient();
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const idleCutoff = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+    const refreshCutoff = new Date(now.getTime() - 60 * 1000).toISOString();
 
-    // 1. Fetch user
-    const userRes = await db.query<User>(
-      'SELECT id, email, first_name, last_name, is_super_admin, status FROM users WHERE id = $1',
-      [session.userId]
+    // Resolve session, user, organization, memberships, roles and permissions
+    // in one database round-trip rather than sequential queries on every API call.
+    const access = await db.query<any>(
+      `WITH session_row AS MATERIALIZED (
+         SELECT token_hash, user_id, active_organization_id, last_active_at
+         FROM sessions
+         WHERE token_hash = $1
+           AND revoked_at IS NULL
+           AND expires_at > $2
+           AND last_active_at > $3
+       ),
+       touched AS (
+         UPDATE sessions AS s
+         SET last_active_at = $2
+         FROM session_row AS sr
+         WHERE s.token_hash = sr.token_hash
+           AND sr.last_active_at < $4
+         RETURNING s.token_hash
+       )
+       SELECT
+         sr.user_id AS session_user_id,
+         sr.active_organization_id,
+         u.id AS auth_user_id,
+         u.email AS auth_email,
+         u.first_name AS auth_first_name,
+         u.last_name AS auth_last_name,
+         u.is_super_admin AS auth_is_super_admin,
+         u.status AS auth_user_status,
+         o.*,
+         uo.id AS membership_id,
+         uo.status AS membership_status,
+         r.id AS joined_role_id,
+         r.name AS joined_role_name,
+         r.code AS joined_role_code,
+         r.description AS joined_role_description,
+         r.is_system_role AS joined_role_is_system_role,
+         r.created_at AS joined_role_created_at,
+         p.code AS permission_code
+       FROM session_row AS sr
+       LEFT JOIN touched AS t ON t.token_hash = sr.token_hash
+       LEFT JOIN users AS u ON u.id = sr.user_id
+       LEFT JOIN organizations AS o ON o.id = sr.active_organization_id
+       LEFT JOIN user_organizations AS uo
+         ON uo.user_id = sr.user_id AND uo.organization_id = sr.active_organization_id
+       LEFT JOIN roles AS r ON r.id = uo.role_id
+       LEFT JOIN role_permissions AS rp ON rp.role_id = r.id
+       LEFT JOIN permissions AS p ON p.id = rp.permission_id`,
+      [hashSessionToken(token), nowIso, idleCutoff, refreshCutoff]
     );
 
-    if (userRes.rows.length === 0 || userRes.rows[0].status !== 'ACTIVE') {
+    const first = access.rows[0];
+    if (!first) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED_SESSION_EXPIRED',
+          message: 'Session has expired or is invalid. Please sign in again.'
+        }
+      });
+      return;
+    }
+
+    if (!first.auth_user_id || first.auth_user_status !== 'ACTIVE') {
       await sessionManager.invalidateSessionAsync(token);
       res.status(401).json({
         error: {
@@ -68,15 +116,7 @@ export async function authenticateToken(
       return;
     }
 
-    const user = userRes.rows[0];
-
-    // 2. Fetch active organization
-    const orgRes = await db.query<Organization>(
-      'SELECT * FROM organizations WHERE id = $1 AND is_active = TRUE',
-      [session.activeOrganizationId]
-    );
-
-    if (orgRes.rows.length === 0) {
+    if (!first.id || first.is_active !== true) {
       res.status(403).json({
         error: {
           code: 'FORBIDDEN_ORGANIZATION_INACTIVE',
@@ -86,83 +126,58 @@ export async function authenticateToken(
       return;
     }
 
-    const organization = orgRes.rows[0];
-
-    // 3. Verify user's membership and status in the active organization
-    let roles: Role[] = [];
-    let permissionCodes: string[] = [];
-
-    if (false) { // Platform administration never implies organization or clinical permissions
-      // Super Admin gets all permissions
-      const allPerms = await db.query<{ code: string }>('SELECT code FROM permissions');
-      permissionCodes = allPerms.rows.map(p => p.code);
-      roles = [{
-        id: 'role_super_admin',
-        name: 'SUPER ADMIN',
-        code: 'SUPER_ADMIN',
-        is_system_role: true,
-        created_at: new Date().toISOString()
-      }];
-    } else {
-      const checkStatusRes = await db.query<{ role_id: string; status: string }>(
-        'SELECT role_id, status FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
-        [user.id, organization.id]
-      );
-
-      if (checkStatusRes.rows.length === 0) {
-        res.status(403).json({
-          error: {
-            code: 'FORBIDDEN_NOT_A_MEMBER',
-            message: 'You are not a member of this organization'
-          }
-        });
-        return;
-      }
-
-      const membership = checkStatusRes.rows[0];
-      if (membership.status !== 'ACTIVE') {
-        res.status(403).json({
-          error: {
-            code: 'FORBIDDEN_MEMBERSHIP_INACTIVE',
-            message: `Your membership in this organization is ${membership.status.toLowerCase()}. Access denied.`
-          }
-        });
-        return;
-      }
-
-      const roleIds = checkStatusRes.rows.map(r => r.role_id);
-      if (roleIds.length > 0) {
-        for (const rid of roleIds) {
-          const rRes = await db.query<Role>('SELECT * FROM roles WHERE id = $1', [rid]);
-          if (rRes.rows[0]) roles.push(rRes.rows[0]);
-
-          const rpRes = await db.query<{ permission_id: string }>(
-            'SELECT permission_id FROM role_permissions WHERE role_id = $1',
-            [rid]
-          );
-          for (const rp of rpRes.rows) {
-            const pRes = await db.query<{ code: string }>('SELECT code FROM permissions WHERE id = $1', [rp.permission_id]);
-            if (pRes.rows[0] && !permissionCodes.includes(pRes.rows[0].code)) {
-              permissionCodes.push(pRes.rows[0].code);
-            }
-          }
+    if (!first.membership_id) {
+      res.status(403).json({
+        error: {
+          code: 'FORBIDDEN_NOT_A_MEMBER',
+          message: 'You are not a member of this organization'
         }
-      }
+      });
+      return;
     }
 
+    if (first.membership_status !== 'ACTIVE') {
+      res.status(403).json({
+        error: {
+          code: 'FORBIDDEN_MEMBERSHIP_INACTIVE',
+          message: 'Your membership in this organization is ' + String(first.membership_status || '').toLowerCase() + '. Access denied.'
+        }
+      });
+      return;
+    }
+
+    const rolesById = new Map<string, Role>();
+    const permissionSet = new Set<string>();
+    for (const row of access.rows) {
+      if (row.joined_role_id && !rolesById.has(row.joined_role_id)) {
+        rolesById.set(row.joined_role_id, {
+          id: row.joined_role_id,
+          name: row.joined_role_name || '',
+          code: row.joined_role_code || '',
+          description: row.joined_role_description || undefined,
+          is_system_role: Boolean(row.joined_role_is_system_role),
+          created_at: row.joined_role_created_at || ''
+        });
+      }
+      if (row.permission_code) permissionSet.add(row.permission_code);
+    }
+
+    const roles = Array.from(rolesById.values());
+    const organization = first as unknown as Organization;
     const context: SecurityContext = {
       user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        isSuperAdmin: user.is_super_admin
+        id: first.auth_user_id,
+        email: first.auth_email || '',
+        firstName: first.auth_first_name || '',
+        lastName: first.auth_last_name || '',
+        isSuperAdmin: Boolean(first.auth_is_super_admin)
       },
       activeOrganization: organization,
       roles,
-      permissions: permissionCodes,
+      permissions: Array.from(permissionSet),
       sessionToken: token,
       membership: {
+        id: first.membership_id,
         role: roles[0]?.code || 'MEMBER',
         status: 'ACTIVE'
       }
