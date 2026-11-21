@@ -73,7 +73,7 @@ export async function markOnboardingStep(
   }
 }
 
-export async function getOnboardingState(organizationId: string, userId?: string) {
+export async function getOnboardingState(organizationId: string, userId?: string, includeOrganizationUsers = true) {
   const db = getDatabaseClient();
 
   // Load the complete onboarding snapshot in one PostgreSQL round trip.
@@ -107,15 +107,15 @@ export async function getOnboardingState(organizationId: string, userId?: string
          SELECT json_agg(i ORDER BY i.created_at DESC)
          FROM (
            SELECT invitation.id, invitation.department_id, invitation.expires_at,
-                  role.code AS role_code, role.name AS role_name, invitation.created_at
+                  r.code AS role_code, r.name AS role_name, invitation.created_at
            FROM organization_invitations invitation
-           JOIN roles role ON role.id = invitation.role_id
+           JOIN roles r ON r.id = invitation.role_id
            WHERE invitation.organization_id = o.id
              AND invitation.accepted_at IS NULL
              AND invitation.revoked_at IS NULL
              AND invitation.department_id IS NOT NULL
              AND invitation.expires_at > NOW()
-             AND role.code = $3
+             AND r.code = $3
          ) i
        ), '[]'::json) AS onboarding_pending_department_admins
      FROM organizations o
@@ -165,7 +165,7 @@ export async function getOnboardingState(organizationId: string, userId?: string
   // Staff directory data is only needed when the administrator is actually
   // on the department-administrator step. Avoid loading it on every visit.
   let organizationUsers: any[] = [];
-  if (missing.includes(OnboardingStep.DEPARTMENT_ADMINISTRATORS)) {
+  if (includeOrganizationUsers && missing.includes(OnboardingStep.DEPARTMENT_ADMINISTRATORS)) {
     const usersResult = await db.query<any>(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.status, u.is_super_admin,
               r.code AS role_code, r.name AS role_name
@@ -195,18 +195,31 @@ export async function getOnboardingState(organizationId: string, userId?: string
 }
 
 export async function validateActivation(organizationId: string) {
-  const state = await getOnboardingState(organizationId);
+  // Activation does not need the employee picker list, so omit that optional
+  // query and fetch the administrator/membership/role in one joined lookup.
+  const state = await getOnboardingState(organizationId, undefined, false);
   if (!state) return { ok: false as const, missingSteps: ['organization'] as string[], state: null };
+
   const db = getDatabaseClient();
-  const admin = { rows: [] as any[] };
-  if (state.organization.onboarding_admin_user_id) {
-    const userResult = await db.query<any>('SELECT id, email_verified_at FROM users WHERE id = $1', [state.organization.onboarding_admin_user_id]);
-    const membership = await db.query<any>('SELECT role_id, status FROM user_organizations WHERE user_id = $1 AND organization_id = $2', [state.organization.onboarding_admin_user_id, organizationId]);
-    const role = membership.rows[0] ? await db.query<any>('SELECT code FROM roles WHERE id = $1', [membership.rows[0].role_id]) : { rows: [] };
-    if (userResult.rows[0] && membership.rows[0]) admin.rows.push({ ...userResult.rows[0], status: membership.rows[0].status, role_code: role.rows[0]?.code });
-  }
+  const adminUserId = state.organization.onboarding_admin_user_id;
+  const adminResult = adminUserId
+    ? await db.query<any>(
+        `SELECT u.id, u.email_verified_at, m.status, r.code AS role_code
+         FROM users u
+         JOIN user_organizations m
+           ON m.user_id = u.id AND m.organization_id = $2
+         LEFT JOIN roles r ON r.id = m.role_id
+         WHERE u.id = $1
+         LIMIT 1`,
+        [adminUserId, organizationId],
+      )
+    : { rows: [] as any[] };
+
+  const admin = adminResult.rows[0];
   const missing = [...state.missingSteps];
-  if (!admin.rows[0] || admin.rows[0].status !== 'ACTIVE' || admin.rows[0].role_code !== 'ORG_OWNER') missing.push('administrator_membership');
-  if (!admin.rows[0]?.email_verified_at) missing.push(OnboardingStep.VERIFY_EMAIL);
+  if (!admin || admin.status !== 'ACTIVE' || admin.role_code !== 'ORG_OWNER') {
+    missing.push('administrator_membership');
+  }
+  if (!admin?.email_verified_at) missing.push(OnboardingStep.VERIFY_EMAIL);
   return { ok: missing.length === 0, missingSteps: [...new Set(missing)], state };
 }
