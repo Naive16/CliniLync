@@ -650,7 +650,10 @@ v1OnboardingRouter.post('/invitations', requireAnyPermission([Permissions.USER_C
     delivery = { accepted: false, provider: config.email.provider, reason: 'PROVIDER_REQUEST_FAILED' };
   }
 
-  res.status(delivery.accepted ? 201 : 503).json({
+  // The invitation record is already persisted. Return success for that saved
+  // action while clearly reporting delivery separately, so a temporary mail
+  // provider outage does not trap clinic setup or invite users falsely.
+  res.status(201).json({
     data: {
       invitation: { id, email, firstName, lastName, roleCode, expiresAt, status: 'PENDING' },
       delivery: delivery.accepted ? 'accepted' : 'failed',
