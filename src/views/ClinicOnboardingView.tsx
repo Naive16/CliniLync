@@ -340,7 +340,9 @@ export const ClinicSetupView: React.FC<ClinicSetupViewProps> = ({ onNavigate, on
     setLoading(true);
     try {
       const next = await api.v1GetOnboardingState();
-      setSetup(next);
+      setSetup((current: any) => current && Array.isArray(current.organizationUsers)
+        ? { ...next, organizationUsers: current.organizationUsers }
+        : next);
       const org = next.organization || {};
       setProfile({ countryCode: org.country_code || 'MWI', region: org.region || '', city: org.city || '', addressLine1: org.address_line1 || '', postalCode: org.postal_code || '', currencyCode: org.currency_code || 'MWK', timezone: org.timezone || 'Africa/Blantyre', phone: org.phone || '' });
       const missing = next.missingSteps || [];
