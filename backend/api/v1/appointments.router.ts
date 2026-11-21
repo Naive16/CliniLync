@@ -28,71 +28,104 @@ v1AppointmentsRouter.get('/', requirePermission(Permissions.APPOINTMENT_VIEW), a
   const db = getDatabaseClient();
   const { startDate, endDate, providerId, departmentId, patientId, status } = req.query;
 
-  let query = 'SELECT * FROM appointments WHERE organization_id = $1';
   const params: unknown[] = [context.activeOrganization.id];
+  const filters = ['a.organization_id = $1'];
 
   if (status && status !== 'ALL') {
     params.push(String(status).toUpperCase());
-    query += ` AND status = $${params.length}`;
+    filters.push(`a.status = $${params.length}`);
   }
-
   if (providerId) {
     params.push(String(providerId));
-    query += ` AND provider_id = $${params.length}`;
+    filters.push(`a.provider_id = $${params.length}`);
   }
-
   if (departmentId) {
     params.push(String(departmentId));
-    query += ` AND department_id = $${params.length}`;
+    filters.push(`a.department_id = $${params.length}`);
   }
-
   if (patientId) {
     params.push(String(patientId));
-    query += ` AND patient_id = $${params.length}`;
+    filters.push(`a.patient_id = $${params.length}`);
   }
-
   if (startDate) {
     params.push(String(startDate));
-    query += ` AND scheduled_time >= $${params.length}`;
+    filters.push(`a.scheduled_time >= $${params.length}`);
   }
-
   if (endDate) {
     params.push(String(endDate));
-    query += ` AND scheduled_time <= $${params.length}`;
+    filters.push(`a.scheduled_time <= $${params.length}`);
   }
 
-  query += ' ORDER BY scheduled_time ASC';
-
-  const aptRes = await db.query<Appointment>(query, params);
-  const appointments = aptRes.rows;
-
-  // Enrich with patient, provider, department, and appointment type
-  const enriched = await Promise.all(
-    appointments.map(async (apt) => {
-      const [patRes, provRes, deptRes, typeRes] = await Promise.all([
-        db.query<Patient>('SELECT id, first_name, last_name, mrn, date_of_birth, phone, email FROM patients WHERE id = $1', [apt.patient_id]),
-        db.query<Provider>('SELECT id, display_name, specialization, license_number, consultation_fee FROM providers WHERE id = $1', [apt.provider_id]),
-        apt.department_id ? db.query<Department>('SELECT id, name, code FROM departments WHERE id = $1', [apt.department_id]) : Promise.resolve({ rows: [] }),
-        apt.appointment_type_id ? db.query<AppointmentType>('SELECT id, name, code, color_code, duration_minutes FROM appointment_types WHERE id = $1', [apt.appointment_type_id]) : Promise.resolve({ rows: [] })
-      ]);
-
-      const patient = patRes.rows[0] || null;
-      const provider = provRes.rows[0] || null;
-
-      return {
-        ...apt,
-        patientName: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown Patient',
-        patientMrn: patient?.mrn || 'N/A',
-        patientPhone: patient?.phone || null,
-        providerName: provider?.display_name || 'Attending Clinician',
-        specialization: provider?.specialization || 'General',
-        departmentName: deptRes.rows[0]?.name || null,
-        appointmentTypeName: typeRes.rows[0]?.name || apt.appointment_type,
-        colorCode: typeRes.rows[0]?.color_code || '#0d9488'
-      };
-    })
+  // Enrich appointment rows with joins instead of issuing up to four additional
+  // database queries for every appointment returned.
+  const aptRes = await db.query<any>(
+    `SELECT
+       a.*,
+       p.first_name AS patient_first_name,
+       p.last_name AS patient_last_name,
+       p.mrn AS patient_mrn,
+       p.date_of_birth AS patient_date_of_birth,
+       p.phone AS patient_phone,
+       p.email AS patient_email,
+       pr.display_name AS provider_display_name,
+       pr.specialization AS provider_specialization,
+       pr.license_number AS provider_license_number,
+       pr.consultation_fee AS provider_consultation_fee,
+       d.name AS department_name,
+       d.code AS department_code,
+       at.name AS appointment_type_name,
+       at.code AS appointment_type_code,
+       at.color_code AS appointment_type_color_code,
+       at.duration_minutes AS appointment_type_duration
+     FROM appointments AS a
+     LEFT JOIN patients AS p
+       ON p.id = a.patient_id AND p.organization_id = a.organization_id
+     LEFT JOIN providers AS pr
+       ON pr.id = a.provider_id AND pr.organization_id = a.organization_id
+     LEFT JOIN departments AS d
+       ON d.id = a.department_id AND d.organization_id = a.organization_id
+     LEFT JOIN appointment_types AS at
+       ON at.id = a.appointment_type_id AND at.organization_id = a.organization_id
+     WHERE ${filters.join(' AND ')}
+     ORDER BY a.scheduled_time ASC`,
+    params
   );
 
+  const enriched = aptRes.rows.map((row: any) => {
+    const {
+      patient_first_name, patient_last_name, patient_mrn, patient_date_of_birth,
+      patient_phone, patient_email, provider_display_name, provider_specialization,
+      provider_license_number, provider_consultation_fee, department_name,
+      department_code, appointment_type_name, appointment_type_code,
+      appointment_type_color_code, appointment_type_duration, ...appointment
+    } = row;
+    const patient = patient_first_name ? {
+      id: appointment.patient_id,
+      first_name: patient_first_name,
+      last_name: patient_last_name,
+      mrn: patient_mrn,
+      date_of_birth: patient_date_of_birth,
+      phone: patient_phone,
+      email: patient_email
+    } : null;
+    return {
+      ...appointment,
+      patient,
+      patientName: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown Patient',
+      patientMrn: patient?.mrn || 'N/A',
+      patientPhone: patient?.phone || null,
+      providerName: provider_display_name || 'Attending Clinician',
+      specialization: provider_specialization || 'General',
+      providerLicenseNumber: provider_license_number || null,
+      providerConsultationFee: provider_consultation_fee ?? null,
+      departmentName: department_name || null,
+      departmentCode: department_code || null,
+      appointmentTypeName: appointment_type_name || appointment.appointment_type,
+      appointmentTypeCode: appointment_type_code || null,
+      appointmentTypeDuration: appointment_type_duration ?? null,
+      colorCode: appointment_type_color_code || '#0d9488'
+    };
+  });
   res.json({
     data: {
       appointments: enriched,
