@@ -121,6 +121,9 @@ export function configureRuntimeConfigFromBindings(values: {
   sessionSecret: string;
   corsOrigins: string[];
   emailFrom?: string;
+  emailProvider?: 'resend' | 'webhook' | 'none';
+  emailApiKey?: string;
+  emailWebhookUrl?: string;
 }): void {
   config.env = values.env;
   config.isProduction = values.env === 'production';
@@ -129,5 +132,8 @@ export function configureRuntimeConfigFromBindings(values: {
   config.appUrl = values.appUrl;
   config.auth.sessionSecret = values.sessionSecret;
   config.security.corsOrigins = values.corsOrigins;
+  config.email.provider = values.emailProvider ?? 'none';
+  config.email.apiKey = values.emailApiKey;
+  config.email.webhookUrl = values.emailWebhookUrl;
   config.email.from = values.emailFrom;
 }
