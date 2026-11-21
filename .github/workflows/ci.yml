@@ -2,8 +2,9 @@ name: CLINILYNC CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, migration/cloudflare-workers-staging]
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [main, master]
 
 jobs:
@@ -16,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22.16.0'
 
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
@@ -32,3 +33,6 @@ jobs:
 
       - name: Build frontend distribution
         run: bun run build
+
+      - name: Validate Cloudflare Worker bundle (dry run)
+        run: bunx wrangler@4 deploy --dry-run --outdir /tmp/clinilync-worker-dry-run --config backend/cloudflare/wrangler.staging.toml

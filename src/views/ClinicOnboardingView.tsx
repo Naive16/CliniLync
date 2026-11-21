@@ -127,18 +127,15 @@ const IconInput: React.FC<{
 );
 
 export const ClinicOnboardingView: React.FC<ClinicOnboardingViewProps> = ({ onNavigate }) => {
-  const [form, setForm] = useState({ clinicName: '', countryCode: 'MWI', region: '', city: '', addressLine1: '', postalCode: '', phone: '', currencyCode: 'MWK', adminFirstName: '', adminLastName: '', adminEmail: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ clinicName: '', countryCode: 'MWI', region: '', city: '', addressLine1: '', postalCode: '', phone: '', currencyCode: 'MWK', adminFirstName: '', adminLastName: '', adminEmail: '' });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [result, setResult] = useState<{ organization: { name: string }; administrator: { email: string }; nextStep: string } | null>(null);
+  const [result, setResult] = useState<{ organization: { name: string }; administrator: { email: string; temporaryPassword: string }; nextStep: string } | null>(null);
 
   const update = (field: keyof typeof form, value: string) => setForm((current) => ({ ...current, [field]: value }));
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
-    if (form.password !== form.confirmPassword) { setError('The passwords do not match.'); return; }
     setSubmitting(true);
     try {
       const response = await api.v1RegisterClinic(form);
@@ -160,9 +157,15 @@ export const ClinicOnboardingView: React.FC<ClinicOnboardingViewProps> = ({ onNa
         <div className="cl-onboarding-result" role="status" aria-live="polite">
           <div className="cl-onboarding-result-icon" aria-hidden="true"><CheckCircle2 size={22} /></div>
           <div>
-            <h3>Registration started</h3>
-            <p>{result.organization.name} has been registered. The administrator account is {result.administrator.email}.</p>
-            <p className="muted-text">The workspace remains locked until the administrator verifies their email and completes setup.</p>
+            <h3>Clinic registered successfully</h3>
+            <p>{result.organization.name} has been registered. Save these administrator sign-in details now.</p>
+            <div className="cl-onboarding-credentials" aria-label="Temporary administrator login details">
+              <div><span>Email / username</span><strong>{result.administrator.email}</strong></div>
+              <div><span>Temporary password</span><strong className="cl-onboarding-temp-password">{result.administrator.temporaryPassword}</strong></div>
+              <button type="button" className="cl-ui-button cl-ui-button-secondary cl-ui-button-sm" onClick={() => void navigator.clipboard?.writeText(`Email: ${result.administrator.email}\\nTemporary password: ${result.administrator.temporaryPassword}`)}>Copy login details</button>
+            </div>
+            <p className="muted-text">This temporary password is shown only once. After email verification and your first sign-in, change it in Settings → Change password.</p>
+            <p className="muted-text">The workspace remains locked until the administrator verifies their email. Keep the temporary password private.</p>
             <p>{result.nextStep}</p>
           </div>
           <button type="button" className="cl-ui-button cl-ui-button-primary cl-ui-button-md" onClick={() => onNavigate('/login')}>
@@ -212,12 +215,7 @@ export const ClinicOnboardingView: React.FC<ClinicOnboardingViewProps> = ({ onNa
               <IconInput inputId="administrator-email" icon={<Mail size={16} />} type="email" value={form.adminEmail} onChange={(value) => update('adminEmail', value)} placeholder="admin@yourclinic.org" autoComplete="email" />
             </Field>
 
-            <Field label="Password" inputId="clinic-password" helperId="clinic-password-help" helper="Use at least 6 characters.">
-              <IconInput inputId="clinic-password" icon={<Lock size={16} />} type={showPassword ? 'text' : 'password'} value={form.password} onChange={(value) => update('password', value)} minLength={6} autoComplete="new-password" ariaDescribedBy="clinic-password-help" showPassword={showPassword} onTogglePassword={() => setShowPassword((visible) => !visible)} />
-            </Field>
-            <Field label="Confirm password" inputId="clinic-confirm-password">
-              <IconInput inputId="clinic-confirm-password" icon={<Lock size={16} />} type={showConfirmPassword ? 'text' : 'password'} value={form.confirmPassword} onChange={(value) => update('confirmPassword', value)} minLength={6} autoComplete="new-password" showPassword={showConfirmPassword} onTogglePassword={() => setShowConfirmPassword((visible) => !visible)} />
-            </Field>
+
           </div>
 
           <button type="submit" disabled={submitting} className="cl-ui-button cl-ui-button-primary cl-ui-button-lg cl-onboarding-submit">
@@ -330,18 +328,21 @@ export const ClinicSetupView: React.FC<ClinicSetupViewProps> = ({ onNavigate, on
   const [activeStep, setActiveStep] = useState(2);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadingOrganizationUsers, setLoadingOrganizationUsers] = useState(false);
+  const [organizationUsersLoadAttempted, setOrganizationUsersLoadAttempted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [profile, setProfile] = useState<Record<string, string>>({ countryCode: '', region: '', city: '', addressLine1: '', postalCode: '', currencyCode: '', timezone: '', phone: '' });
   const [customDepartment, setCustomDepartment] = useState('');
   const [inviteByDepartment, setInviteByDepartment] = useState<Record<string, { firstName: string; lastName: string; email: string }>>({});
-  const [staffInvite, setStaffInvite] = useState({ firstName: '', lastName: '', email: '', roleCode: 'RECEPTIONIST' });
 
   const refresh = async () => {
     setLoading(true);
     try {
       const next = await api.v1GetOnboardingState();
-      setSetup(next);
+      setSetup((current: any) => current && Array.isArray(current.organizationUsers)
+        ? { ...next, organizationUsers: current.organizationUsers }
+        : next);
       const org = next.organization || {};
       setProfile({ countryCode: org.country_code || 'MWI', region: org.region || '', city: org.city || '', addressLine1: org.address_line1 || '', postalCode: org.postal_code || '', currencyCode: org.currency_code || 'MWK', timezone: org.timezone || 'Africa/Blantyre', phone: org.phone || '' });
       const missing = next.missingSteps || [];
@@ -350,6 +351,26 @@ export const ClinicSetupView: React.FC<ClinicSetupViewProps> = ({ onNavigate, on
     finally { setLoading(false); }
   };
   useEffect(() => { void refresh(); }, []);
+
+  // The staff directory is only required for department administrator assignment.
+  // Keep it out of the initial onboarding request to make the first screen faster.
+  useEffect(() => {
+    if (activeStep !== 5 || !setup || Array.isArray(setup.organizationUsers) || loadingOrganizationUsers || organizationUsersLoadAttempted) return;
+    let cancelled = false;
+    setOrganizationUsersLoadAttempted(true);
+    setLoadingOrganizationUsers(true);
+    api.v1GetOnboardingState(true)
+      .then((next) => {
+        if (!cancelled) setSetup((current: any) => current ? { ...current, organizationUsers: next.organizationUsers || [] } : current);
+      })
+      .catch((err) => {
+        if (!cancelled) setError((err as Error).message || 'The staff directory could not be loaded.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingOrganizationUsers(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeStep, setup, loadingOrganizationUsers, organizationUsersLoadAttempted]);
 
   const run = async (action: () => Promise<void>, success?: string) => {
     setError(null); setMessage(null); setSaving(true);
@@ -422,11 +443,17 @@ export const ClinicSetupView: React.FC<ClinicSetupViewProps> = ({ onNavigate, on
       )}
 
       {activeStep === 5 && (
-        <section className="cl-onboarding-step-panel"><h3>Assign department administrators</h3><p>You can assign administrators now, or manage departments yourself and add administrators later.</p>{(setup.departments || []).map((department: any) => { const invite = inviteByDepartment[department.id] || { firstName: '', lastName: '', email: '' }; return <div className="cl-onboarding-department-row" key={department.id}><div><strong>{department.name}</strong><span>{department.administrator_user_id ? 'Administrator assigned' : pendingAdmins.has(department.id) ? 'Invitation pending' : 'Needs an administrator'}</span></div><select className="cl-onboarding-input" value={department.administrator_user_id || ''} onChange={(e) => void run(async () => { if (!e.target.value) return; await api.v1AssignDepartmentAdministrator(department.id, e.target.value); }, 'Department administrator assigned.')}><option value="">Select an existing employee</option>{eligibleUsers.map((user: any) => <option key={user.id} value={user.id}>{user.first_name} {user.last_name} — {user.role_name}</option>)}</select>{!department.administrator_user_id && !pendingAdmins.has(department.id) && <div className="cl-onboarding-inline-form"><input className="cl-onboarding-input" placeholder="First name" value={invite.firstName} onChange={(e) => setInviteByDepartment({ ...inviteByDepartment, [department.id]: { ...invite, firstName: e.target.value } })} /><input className="cl-onboarding-input" placeholder="Last name" value={invite.lastName} onChange={(e) => setInviteByDepartment({ ...inviteByDepartment, [department.id]: { ...invite, lastName: e.target.value } })} /><input className="cl-onboarding-input" placeholder="Work email" value={invite.email} onChange={(e) => setInviteByDepartment({ ...inviteByDepartment, [department.id]: { ...invite, email: e.target.value } })} /><button type="button" disabled={saving} className="cl-ui-button cl-ui-button-secondary cl-ui-button-md" onClick={() => void run(async () => { await api.v1CreateInvitation({ ...invite, roleCode: 'DEPARTMENT_ADMIN', departmentId: department.id }); }, 'Administrator invitation saved.')}>Invite</button></div>}</div>; })}<button type="button" className="cl-ui-button cl-ui-button-primary cl-ui-button-md" onClick={() => void run(async () => { await api.v1CompleteOnboardingStep('department_administrators'); setActiveStep(6); }, 'Assignments saved.')}>Continue <ArrowRight size={16} aria-hidden="true" /></button></section>
+        <section className="cl-onboarding-step-panel"><h3>Assign department administrators</h3><p>You can assign administrators now, or manage departments yourself and add administrators later.</p>{(setup.departments || []).map((department: any) => { const invite = inviteByDepartment[department.id] || { firstName: '', lastName: '', email: '' }; return <div className="cl-onboarding-department-row" key={department.id}><div><strong>{department.name}</strong><span>{department.administrator_user_id ? 'Administrator assigned' : pendingAdmins.has(department.id) ? 'Invitation pending' : 'Needs an administrator'}</span></div><select className="cl-onboarding-input" value={department.administrator_user_id || ''} disabled={loadingOrganizationUsers || saving} onChange={(e) => void run(async () => { if (!e.target.value) return; await api.v1AssignDepartmentAdministrator(department.id, e.target.value); }, 'Department administrator assigned.')}><option value="">{loadingOrganizationUsers ? 'Loading staff directory…' : 'Select an existing employee'}</option>{eligibleUsers.map((user: any) => <option key={user.id} value={user.id}>{user.first_name} {user.last_name} — {user.role_name}</option>)}</select>{!department.administrator_user_id && !pendingAdmins.has(department.id) && <div className="cl-onboarding-inline-form"><input className="cl-onboarding-input" placeholder="First name" value={invite.firstName} onChange={(e) => setInviteByDepartment({ ...inviteByDepartment, [department.id]: { ...invite, firstName: e.target.value } })} /><input className="cl-onboarding-input" placeholder="Last name" value={invite.lastName} onChange={(e) => setInviteByDepartment({ ...inviteByDepartment, [department.id]: { ...invite, lastName: e.target.value } })} /><input className="cl-onboarding-input" placeholder="Work email" value={invite.email} onChange={(e) => setInviteByDepartment({ ...inviteByDepartment, [department.id]: { ...invite, email: e.target.value } })} /><button type="button" disabled={saving} className="cl-ui-button cl-ui-button-secondary cl-ui-button-md" onClick={() => void run(async () => { await api.v1CreateInvitation({ ...invite, roleCode: 'DEPARTMENT_ADMIN', departmentId: department.id }); }, 'Administrator invitation saved.')}>Invite</button></div>}</div>; })}<button type="button" className="cl-ui-button cl-ui-button-primary cl-ui-button-md" onClick={() => void run(async () => { await api.v1CompleteOnboardingStep('department_administrators'); setActiveStep(6); }, 'Assignments saved.')}>Continue <ArrowRight size={16} aria-hidden="true" /></button></section>
       )}
 
       {activeStep === 6 && (
-        <section className="cl-onboarding-step-panel"><h3>Invite clinic staff</h3><p>Invitations can remain pending while the clinic activates. No invitation grants access until it is accepted.</p><div className="cl-onboarding-fields"><Field label="First name" inputId="staff-first"><input id="staff-first" className="cl-onboarding-input" value={staffInvite.firstName} onChange={(e) => setStaffInvite({ ...staffInvite, firstName: e.target.value })} /></Field><Field label="Last name" inputId="staff-last"><input id="staff-last" className="cl-onboarding-input" value={staffInvite.lastName} onChange={(e) => setStaffInvite({ ...staffInvite, lastName: e.target.value })} /></Field><Field label="Work email" inputId="staff-email"><input id="staff-email" className="cl-onboarding-input" type="email" value={staffInvite.email} onChange={(e) => setStaffInvite({ ...staffInvite, email: e.target.value })} /></Field><Field label="Role" inputId="staff-role"><select id="staff-role" className="cl-onboarding-input" value={staffInvite.roleCode} onChange={(e) => setStaffInvite({ ...staffInvite, roleCode: e.target.value })}><option value="RECEPTIONIST">Receptionist</option><option value="NURSE">Nurse</option><option value="DOCTOR">Doctor</option><option value="BILLING_STAFF">Billing staff</option><option value="LAB_STAFF">Laboratory staff</option></select></Field></div><button type="button" disabled={saving} className="cl-ui-button cl-ui-button-secondary cl-ui-button-md" onClick={() => void run(async () => { await api.v1CreateInvitation(staffInvite); setStaffInvite({ firstName: '', lastName: '', email: '', roleCode: 'RECEPTIONIST' }); }, 'Staff invitation saved.')}>Send invitation</button><button type="button" className="cl-ui-button cl-ui-button-primary cl-ui-button-md" onClick={() => void run(async () => { await api.v1CompleteOnboardingStep('staff_invitations'); setActiveStep(7); }, 'Staff setup complete.')}>Continue to review <ArrowRight size={16} aria-hidden="true" /></button></section>
+        <section className="cl-onboarding-step-panel">
+          <h3>Staff invitations</h3>
+          <p>You can invite clinic staff after activating your workspace. Skipping this step does not affect clinic setup, and no staff accounts will be created now.</p>
+          <button type="button" disabled={saving} className="cl-ui-button cl-ui-button-primary cl-ui-button-md" onClick={() => void run(async () => { await api.v1CompleteOnboardingStep('staff_invitations'); setActiveStep(7); }, 'Staff invitations skipped. You can invite staff later from your clinic workspace.')}>
+            Skip to review <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </section>
       )}
 
       {activeStep === 7 && (

@@ -22,7 +22,8 @@ import { User, Organization } from '../../types/domain.js';
 export const v1AuthRouter = Router();
 
 // Constant dummy salt/hash for timing-safe comparison on invalid user emails
-const DUMMY_HASH = hashPassword('DummyTimingAttackMitigationKey123!');
+// Precomputed dummy PBKDF2 value avoids randomBytes() during Worker module initialization.
+const DUMMY_HASH = { hash: 'c5e14451caef6ade20857eb4a5e65db6c38bcc93bf609e881d28d55392318756a265168745c2ec1b3ad78cccdb66b35c2d3da328470806dedb53dd598e21c557', salt: 'clinilync-dummy-timing-salt-v1' };
 
 /**
  * Shared credential login handler. The account type is determined from the
@@ -147,15 +148,14 @@ async function handleLogin(req: Request, res: Response, expectedAccountType: 'ST
     }
   }
 
-  const membershipRoles = await db.query<{ role_id: string }>(
-    'SELECT role_id FROM user_organizations WHERE user_id = $1 AND organization_id = $2 AND status = $3',
+  const membershipRoles = await db.query<{ code: string }>(
+    `SELECT r.code
+     FROM user_organizations AS uo
+     INNER JOIN roles AS r ON r.id = uo.role_id
+     WHERE uo.user_id = $1 AND uo.organization_id = $2 AND uo.status = $3`,
     [user.id, activeOrgId, 'ACTIVE']
   );
-  const roleCodes: string[] = [];
-  for (const membershipRole of membershipRoles.rows) {
-    const role = await db.query<{ code: string }>('SELECT code FROM roles WHERE id = $1', [membershipRole.role_id]);
-    if (role.rows[0]) roleCodes.push(role.rows[0].code);
-  }
+  const roleCodes = membershipRoles.rows.map(role => role.code);
   const isPatientAccount = roleCodes.includes('PATIENT');
   const accountTypeMatches = expectedAccountType === 'PATIENT' ? isPatientAccount : !isPatientAccount;
 
@@ -201,16 +201,15 @@ async function handleLogin(req: Request, res: Response, expectedAccountType: 'ST
     const all = await db.query<Organization>('SELECT * FROM organizations WHERE is_active = TRUE ORDER BY name ASC');
     accessibleOrgs = all.rows;
   } else {
-    const userOrgsRes = await db.query<{ organization_id: string }>(
-      'SELECT organization_id FROM user_organizations WHERE user_id = $1 AND status = $2',
+    const organizations = await db.query<Organization>(
+      `SELECT DISTINCT o.*
+       FROM organizations AS o
+       INNER JOIN user_organizations AS uo ON uo.organization_id = o.id
+       WHERE uo.user_id = $1 AND uo.status = $2 AND o.is_active = TRUE
+       ORDER BY o.name ASC`,
       [user.id, 'ACTIVE']
     );
-    for (const uo of userOrgsRes.rows) {
-      const oRes = await db.query<Organization>('SELECT * FROM organizations WHERE id = $1 AND is_active = TRUE', [uo.organization_id]);
-      if (oRes.rows[0] && !accessibleOrgs.some(ao => ao.id === oRes.rows[0].id)) {
-        accessibleOrgs.push(oRes.rows[0]);
-      }
-    }
+    accessibleOrgs = organizations.rows;
   }
 
   const currentOrg = accessibleOrgs.find(o => o.id === activeOrgId) || accessibleOrgs[0];
@@ -394,6 +393,24 @@ v1AuthRouter.post('/change-password', authenticateToken, authRateLimiter, origin
 v1AuthRouter.get('/session', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const context = req.securityContext!;
   const session = sessionManager.getSession(context.sessionToken);
+  const db = getDatabaseClient();
+  let availableOrganizations: Organization[] = [];
+  if (context.user.isSuperAdmin) {
+    const organizations = await db.query<Organization>(
+      'SELECT * FROM organizations WHERE is_active = TRUE ORDER BY name ASC'
+    );
+    availableOrganizations = organizations.rows;
+  } else {
+    const organizations = await db.query<Organization>(
+      `SELECT DISTINCT o.*
+       FROM organizations AS o
+       INNER JOIN user_organizations AS uo ON uo.organization_id = o.id
+       WHERE uo.user_id = $1 AND uo.status = $2 AND o.is_active = TRUE
+       ORDER BY o.name ASC`,
+      [context.user.id, 'ACTIVE']
+    );
+    availableOrganizations = organizations.rows;
+  }
   const requestId = (req.headers['x-request-id'] as string) || `req_${Date.now()}`;
 
   res.status(200).json({
@@ -403,6 +420,7 @@ v1AuthRouter.get('/session', authenticateToken, async (req: AuthenticatedRequest
       activeOrganization: context.activeOrganization,
       roles: context.roles,
       permissions: context.permissions,
+      availableOrganizations,
       expiresAt: session ? new Date(session.expiresAt).toISOString() : null,
       lastActiveAt: session ? new Date(session.lastActiveAt).toISOString() : null
     },

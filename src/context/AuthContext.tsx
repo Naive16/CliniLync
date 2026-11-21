@@ -186,7 +186,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const session = await api.v1GetSession();
         if (session && session.active) {
-          await refreshSession();
+          setUser(session.user);
+          setActiveOrganization(session.activeOrganization);
+          setRoles(session.roles || []);
+          setPermissions(session.permissions || []);
+          setAvailableOrganizations(session.availableOrganizations || []);
+          api.setOrganizationId(session.activeOrganization.id);
         } else {
           setUser(null);
         }

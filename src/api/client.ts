@@ -144,10 +144,11 @@ class ApiClient {
     return this.request<{
       active: boolean;
       user: { id: string; email: string; firstName: string; lastName: string; isSuperAdmin: boolean };
-      activeOrganization: { id: string; name: string };
+      activeOrganization: { id: string; name: string; currency_code: string; timezone: string; country_code?: string; region?: string | null; city?: string | null; address_line1?: string | null; postal_code?: string | null; phone?: string | null; email?: string | null; onboarding_status?: string; onboarding_step?: number; onboarding_admin_user_id?: string | null };
       roles: { id: string; name: string; code: string }[];
       permissions: string[];
-      expiresAt: string;
+      availableOrganizations: { id: string; name: string; currency_code: string; timezone: string; country_code?: string; region?: string | null; city?: string | null; address_line1?: string | null; postal_code?: string | null; phone?: string | null; email?: string | null; onboarding_status?: string; onboarding_step?: number; onboarding_admin_user_id?: string | null }[];
+      expiresAt: string | null;
     }>('/api/v1/auth/session');
   }
 
@@ -183,7 +184,7 @@ class ApiClient {
   async v1RegisterClinic(payload: Record<string, unknown>) {
     return this.request<{
       organization: { id: string; name: string; slug: string };
-      administrator: { email: string; firstName: string; lastName: string };
+      administrator: { email: string; firstName: string; lastName: string; temporaryPassword: string };
       emailVerificationRequired: boolean;
       deliveryAccepted: boolean;
       deliveryProvider: string;
@@ -198,8 +199,9 @@ class ApiClient {
     });
   }
 
-  async v1GetOnboardingState() {
-    return this.request<any>('/api/v1/onboarding/state');
+  async v1GetOnboardingState(includeOrganizationUsers = false) {
+    const query = includeOrganizationUsers ? '?includeOrganizationUsers=true' : '';
+    return this.request<any>(`/api/v1/onboarding/state${query}`);
   }
 
   async v1CreateOnboardingDepartment(payload: { name: string; code: string }) {

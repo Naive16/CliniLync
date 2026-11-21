@@ -13,31 +13,34 @@
 
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext.js';
-import { LoginView } from './views/LoginView.js';
-import { LandingView } from './views/LandingView.js';
-import { PublicInfoView } from './views/PublicInfoView.js';
-import { PatientsView } from './views/StaffApp/PatientsView.js';
-import { DashboardView } from './views/StaffApp/DashboardView.js';
-import { ClinicalView } from './views/StaffApp/ClinicalView.js';
-import { BillingView } from './views/StaffApp/BillingView.js';
-import { AnalyticsView } from './views/StaffApp/AnalyticsView.js';
-import { SettingsView } from './views/StaffApp/SettingsView.js';
-import { AdminPortalView } from './views/Admin/AdminPortalView.js';
-import { ProvidersView } from './views/StaffApp/ProvidersView.js';
-import { DepartmentsView } from './views/StaffApp/DepartmentsView.js';
-import { AppointmentsView } from './views/StaffApp/AppointmentsView.js';
-import { EncountersView } from './views/StaffApp/EncountersView.js';
-import { PatientMedicalRecordView } from './views/StaffApp/PatientMedicalRecordView.js';
-import { PatientProblemsView } from './views/StaffApp/PatientProblemsView.js';
-import { CarePlansView } from './views/StaffApp/CarePlansView.js';
-import { PatientMedicationsView } from './views/StaffApp/PatientMedicationsView.js';
-import { PrescriptionsView } from './views/StaffApp/PrescriptionsView.js';
-import { PatientLoginView } from './views/PatientPortal/PatientLoginView.js';
-import { PatientPortalShell } from './views/PatientPortal/PatientPortalShell.js';
-import { PatientActivationView } from './views/PatientPortal/PatientActivationView.js';
+const LoginView = React.lazy(() => import('./views/LoginView.js').then((module) => ({ default: module.LoginView })));
+const LandingView = React.lazy(() => import('./views/LandingView.js').then((module) => ({ default: module.LandingView })));
+const PublicInfoView = React.lazy(() => import('./views/PublicInfoView.js').then((module) => ({ default: module.PublicInfoView })));
+const PatientsView = React.lazy(() => import('./views/StaffApp/PatientsView.js').then((module) => ({ default: module.PatientsView })));
+const DashboardView = React.lazy(() => import('./views/StaffApp/DashboardView.js').then((module) => ({ default: module.DashboardView })));
+const ClinicalView = React.lazy(() => import('./views/StaffApp/ClinicalView.js').then((module) => ({ default: module.ClinicalView })));
+const BillingView = React.lazy(() => import('./views/StaffApp/BillingView.js').then((module) => ({ default: module.BillingView })));
+const AnalyticsView = React.lazy(() => import('./views/StaffApp/AnalyticsView.js').then((module) => ({ default: module.AnalyticsView })));
+const SettingsView = React.lazy(() => import('./views/StaffApp/SettingsView.js').then((module) => ({ default: module.SettingsView })));
+const AdminPortalView = React.lazy(() => import('./views/Admin/AdminPortalView.js').then((module) => ({ default: module.AdminPortalView })));
+const ProvidersView = React.lazy(() => import('./views/StaffApp/ProvidersView.js').then((module) => ({ default: module.ProvidersView })));
+const DepartmentsView = React.lazy(() => import('./views/StaffApp/DepartmentsView.js').then((module) => ({ default: module.DepartmentsView })));
+const AppointmentsView = React.lazy(() => import('./views/StaffApp/AppointmentsView.js').then((module) => ({ default: module.AppointmentsView })));
+const EncountersView = React.lazy(() => import('./views/StaffApp/EncountersView.js').then((module) => ({ default: module.EncountersView })));
+const PatientMedicalRecordView = React.lazy(() => import('./views/StaffApp/PatientMedicalRecordView.js').then((module) => ({ default: module.PatientMedicalRecordView })));
+const PatientProblemsView = React.lazy(() => import('./views/StaffApp/PatientProblemsView.js').then((module) => ({ default: module.PatientProblemsView })));
+const CarePlansView = React.lazy(() => import('./views/StaffApp/CarePlansView.js').then((module) => ({ default: module.CarePlansView })));
+const PatientMedicationsView = React.lazy(() => import('./views/StaffApp/PatientMedicationsView.js').then((module) => ({ default: module.PatientMedicationsView })));
+const PrescriptionsView = React.lazy(() => import('./views/StaffApp/PrescriptionsView.js').then((module) => ({ default: module.PrescriptionsView })));
+const PatientLoginView = React.lazy(() => import('./views/PatientPortal/PatientLoginView.js').then((module) => ({ default: module.PatientLoginView })));
+const PatientPortalShell = React.lazy(() => import('./views/PatientPortal/PatientPortalShell.js').then((module) => ({ default: module.PatientPortalShell })));
+const PatientActivationView = React.lazy(() => import('./views/PatientPortal/PatientActivationView.js').then((module) => ({ default: module.PatientActivationView })));
 import { Header } from './components/common/Header.js';
 import { Sidebar } from './components/common/Sidebar.js';
-import { ClinicOnboardingView, ClinicSetupView, InvitationAcceptView, VerifyEmailView } from './views/ClinicOnboardingView.js';
+const ClinicOnboardingView = React.lazy(() => import('./views/ClinicOnboardingView.js').then((module) => ({ default: module.ClinicOnboardingView })));
+const ClinicSetupView = React.lazy(() => import('./views/ClinicOnboardingView.js').then((module) => ({ default: module.ClinicSetupView })));
+const InvitationAcceptView = React.lazy(() => import('./views/ClinicOnboardingView.js').then((module) => ({ default: module.InvitationAcceptView })));
+const VerifyEmailView = React.lazy(() => import('./views/ClinicOnboardingView.js').then((module) => ({ default: module.VerifyEmailView })));
 
 const getRequiredPermission = (path: string): string | null => {
   if (path.startsWith('/app/billing')) return 'billing.view';
@@ -152,14 +155,7 @@ function AppContent() {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 text-slate-600">
-        <div className="flex items-center gap-3 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
-          <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs font-semibold">Checking your session...</span>
-        </div>
-      </div>
-    );
+    return <AppLoadingFallback />;
   }
 
   // Public onboarding routes stay outside the authenticated shell.
@@ -326,10 +322,19 @@ function AppContent() {
   );
 }
 
+const AppLoadingFallback: React.FC = () => (
+  <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50 p-6 text-slate-600" role="status" aria-live="polite">
+    <div className="cl-ui-spinner" aria-hidden="true" />
+    <span className="text-xs font-semibold">Loading your workspace...</span>
+  </div>
+);
+
 export function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <React.Suspense fallback={<AppLoadingFallback />}>
+        <AppContent />
+      </React.Suspense>
     </AuthProvider>
   );
 }

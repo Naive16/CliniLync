@@ -207,7 +207,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 .clinilync-shell { min-height: 100vh; background: var(--cl-surface); color: var(--cl-navy); }
-.clinilync-main { margin-left: var(--cl-sidebar-width); min-height: 100vh; min-width: 0; transition: margin-left 200ms ease; }
+.clinilync-main { margin-left: var(--cl-sidebar-width); min-height: 100vh; min-width: 0; transition: margin-left 260ms cubic-bezier(.22,.61,.36,1); }
 .clinilync-shell.is-sidebar-collapsed .clinilync-main { margin-left: var(--cl-sidebar-collapsed-width); }
 .clinilync-content { min-height: calc(100vh - var(--cl-topbar-height)); overflow-x: hidden; }
 
@@ -545,7 +545,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .clinilync-sidebar {
   position: fixed; inset: 0 auto 0 0; z-index: 40; width: var(--cl-sidebar-width);
-  display: flex; flex-direction: column; background: var(--cl-navy); color: #fff; overflow-y: auto; transition: width 200ms ease;
+  display: flex; flex-direction: column; background: var(--cl-navy); color: #fff; overflow-x: hidden; overflow-y: auto; transition: width 220ms cubic-bezier(.2,.8,.2,1); will-change: width;
 }
 .clinilync-sidebar-brand-row { display: flex; align-items: center; gap: 8px; min-height: 78px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.1); }
 .clinilync-sidebar-brand {
@@ -604,13 +604,36 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .clinilync-sidebar.is-collapsed { width: var(--cl-sidebar-collapsed-width); }
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-brand-row { justify-content: center; padding-inline: 10px; }
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-brand { justify-content: center; flex: 0 0 auto; padding-inline: 0; }
+/* Prevent text from participating in the narrow-rail layout during animation. */
+.clinilync-sidebar > * { min-width: 0; }
+.clinilync-sidebar.is-collapsed .clinilync-nav-item > span:not(.clinilync-nav-tooltip) {
+  position: absolute;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-brand > span:last-child,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-section-label,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-context,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-account-organization,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-account .clinilync-sidebar-role-switcher,
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-user-copy,
-  .clinilync-sidebar.is-collapsed .clinilync-sidebar-signout .clinilync-signout-label { display: none; }
+.clinilync-sidebar.is-collapsed .clinilync-sidebar-signout .clinilync-signout-label {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 100ms ease, visibility 0s linear 100ms;
+}
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-brand > span:last-child,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-section-label,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-account-organization,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-account .clinilync-sidebar-role-switcher,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-user-copy,
+.clinilync-sidebar:not(.is-collapsed) .clinilync-sidebar-signout .clinilync-signout-label {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 140ms ease 80ms, visibility 0s linear 80ms;
+}
 .clinilync-sidebar.is-collapsed .clinilync-sidebar-nav { padding-inline: 12px; }
 .clinilync-sidebar.is-collapsed .clinilync-nav-item { justify-content: center; padding-inline: 0; border-left: 0; }
 .clinilync-sidebar.is-collapsed .clinilync-nav-item.is-active { border-left: 0; }
@@ -658,8 +681,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .clinilync-topbar { padding: 0 20px; }
   .clinilync-mobile-menu-button { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; color: var(--cl-navy); background: transparent; border: 0; border-radius: 7px; }
   .clinilync-mobile-menu-button:hover { background: var(--cl-blue-light); }
-  .clinilync-mobile-drawer-backdrop.is-open { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(20,43,77,.45); backdrop-filter: blur(2px); }
-.clinilync-mobile-drawer { position: fixed; inset: 0 auto 0 0; z-index: 60; display: flex; flex-direction: column; width: min(320px, 70vw); padding-top: 8px; color: #fff; background: var(--cl-navy); overflow-y: auto; transform: translateX(-100%); transition: transform 180ms ease; box-shadow: 6px 0 20px rgba(20,43,77,.18); }
+  .clinilync-mobile-drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(20,43,77,.45); opacity: 0; pointer-events: none; transition: opacity 180ms ease; }
+  .clinilync-mobile-drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
+  .clinilync-mobile-drawer { position: fixed; inset: 0 auto 0 0; z-index: 60; display: flex; flex-direction: column; width: min(320px, 70vw); padding-top: 8px; color: #fff; background: var(--cl-navy); overflow-y: auto; transform: translateX(-100%); transition: transform 180ms cubic-bezier(.2,.8,.2,1); box-shadow: 6px 0 20px rgba(20,43,77,.18); }
   .clinilync-mobile-drawer.is-open { transform: translateX(0); }
   .clinilync-mobile-drawer-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px 16px; border-bottom: 1px solid rgba(255,255,255,.1); }
   .clinilync-mobile-drawer-header strong { flex: 1; font-size: 16px; }
@@ -685,8 +709,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .clinilync-search-close { display: inline-flex; color: var(--cl-slate); background: transparent; border: 0; }
   .clinilync-topbar-actions { gap: 2px; }
   .clinilync-topbar-actions > .clinilync-icon-button:first-of-type { display: none; }
-  .clinilync-mobile-drawer-backdrop.is-open { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(20,43,77,.45); backdrop-filter: blur(2px); }
-  .clinilync-mobile-drawer { position: fixed; inset: 0 auto 0 0; z-index: 60; display: flex; flex-direction: column; width: min(290px, 86vw); padding-top: 8px; color: #fff; background: var(--cl-navy); overflow-y: auto; transform: translateX(-100%); transition: transform 180ms ease; box-shadow: 6px 0 20px rgba(20,43,77,.18); }
+  .clinilync-mobile-drawer-backdrop { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(20,43,77,.45); opacity: 0; pointer-events: none; transition: opacity 180ms ease; }
+  .clinilync-mobile-drawer-backdrop.is-open { opacity: 1; pointer-events: auto; }
+  .clinilync-mobile-drawer { position: fixed; inset: 0 auto 0 0; z-index: 60; display: flex; flex-direction: column; width: min(290px, 86vw); padding-top: 8px; color: #fff; background: var(--cl-navy); overflow-y: auto; transform: translateX(-100%); transition: transform 180ms cubic-bezier(.2,.8,.2,1); box-shadow: 6px 0 20px rgba(20,43,77,.18); }
   .clinilync-mobile-drawer.is-open { transform: translateX(0); }
   .clinilync-mobile-drawer-header { display: flex; align-items: center; gap: 10px; padding: 13px 16px 16px; border-bottom: 1px solid rgba(255,255,255,.1); }
   .clinilync-mobile-drawer-header strong { flex: 1; font-size: 16px; }
@@ -1341,4 +1366,93 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .cl-home-hero { padding-top: 56px; }
   .cl-home-dashboard { grid-template-columns: 145px minmax(0,1fr); }
   .cl-home-dashboard-content { padding: 15px; }
+}
+
+
+/* Unified public authentication and onboarding surfaces: match the light workspace UI. */
+.clinilync-auth-page.cl-login-page-clean,
+.cl-onboarding-page {
+  min-height: 100dvh;
+  padding: clamp(20px, 4vw, 48px);
+  align-items: center;
+  justify-content: center;
+  color: var(--cl-navy);
+  background: var(--cl-surface, #F5F7F6);
+}
+.clinilync-auth-card.cl-login-card-clean {
+  display: block;
+  width: min(100%, 560px);
+  min-height: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.clinilync-auth-form.cl-login-form-clean {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  padding: clamp(28px, 5vw, 56px);
+  overflow: visible;
+  background: var(--cl-white, #FFFFFF);
+  border: 1px solid var(--cl-border, #E3E9E5);
+  border-radius: var(--cl-radius-lg, 16px);
+  box-shadow: var(--cl-shadow-sm, 0 12px 32px rgba(20,35,27,.08));
+}
+.cl-login-content { width: min(100%, 410px); margin: 0 auto; }
+.cl-login-brand-lockup { margin-bottom: 42px; }
+.cl-login-page-clean .cl-login-desktop-intro { display: none !important; }
+
+.cl-onboarding-page .cl-onboarding-shell {
+  display: grid;
+  grid-template-columns: minmax(220px, .72fr) minmax(0, 1.28fr);
+  width: min(1080px, 100%);
+  min-height: 0;
+  overflow: hidden;
+  background: var(--cl-white, #FFFFFF);
+  border: 1px solid var(--cl-border, #E3E9E5);
+  border-radius: var(--cl-radius-lg, 16px);
+  box-shadow: var(--cl-shadow-sm, 0 12px 32px rgba(20,35,27,.08));
+}
+.cl-onboarding-page .cl-onboarding-intro {
+  color: var(--cl-navy);
+  background: #F0F6F2;
+}
+.cl-onboarding-page .cl-onboarding-intro::before,
+.cl-onboarding-page .cl-onboarding-intro::after { background: rgba(4,120,87,.06); }
+.cl-onboarding-page .cl-onboarding-brand,
+.cl-onboarding-page .cl-onboarding-intro h1 { color: var(--cl-navy); }
+.cl-onboarding-page .cl-onboarding-brand .clinilync-brand-mark {
+  color: #047857;
+  background: #E4F3EA;
+}
+.cl-onboarding-page .cl-onboarding-intro .cl-onboarding-eyebrow,
+.cl-onboarding-page .cl-onboarding-benefits svg { color: #047857; }
+.cl-onboarding-page .cl-onboarding-intro-copy > p:not(.cl-onboarding-eyebrow),
+.cl-onboarding-page .cl-onboarding-benefits li,
+.cl-onboarding-page .cl-onboarding-intro-note { color: #596B61; }
+.cl-onboarding-page .cl-onboarding-intro-note { border-color: #DCE8E0; }
+.cl-onboarding-page .cl-onboarding-main { background: var(--cl-white, #FFFFFF); }
+
+.cl-onboarding-credentials {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 16px;
+  background: #F6F9F7;
+  border: 1px solid #DDE8E1;
+  border-radius: 10px;
+}
+.cl-onboarding-credentials > div { display: grid; gap: 5px; }
+.cl-onboarding-credentials span { color: #65746B; font-size: 11px; font-weight: 650; }
+.cl-onboarding-credentials strong { color: #17231C; font-size: 14px; overflow-wrap: anywhere; }
+.cl-onboarding-credentials .cl-onboarding-temp-password { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .02em; }
+@media (max-width: 767px) {
+  .clinilync-auth-page.cl-login-page-clean,
+  .cl-onboarding-page { padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); }
+  .clinilync-auth-form.cl-login-form-clean { padding: 28px 22px; }
+  .cl-onboarding-page .cl-onboarding-shell { display: flex; flex-direction: column; }
+  .cl-onboarding-page .cl-onboarding-intro { padding: 24px 22px; }
+  .cl-onboarding-page .cl-onboarding-main { padding: 28px 22px; }
 }

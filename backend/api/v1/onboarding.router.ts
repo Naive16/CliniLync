@@ -53,7 +53,8 @@ v1OnboardingRouter.post('/register', authRateLimiter, originValidationMiddleware
   const firstName = cleanText(req.body.adminFirstName, 100);
   const lastName = cleanText(req.body.adminLastName, 100);
   const email = cleanText(req.body.adminEmail, 255).toLowerCase();
-  const password = typeof req.body.password === 'string' ? req.body.password : '';
+  // Generate a one-time bootstrap password server-side; never accept or log it from the browser.
+  const temporaryPassword = crypto.randomBytes(18).toString('base64url');
   const countryCode = cleanText(req.body.countryCode, 3).toUpperCase() || 'GBR';
   const currencyCode = cleanText(req.body.currencyCode, 3).toUpperCase() || 'GBP';
   const defaultTimeZones: Record<string, string> = {
@@ -79,10 +80,6 @@ v1OnboardingRouter.post('/register', authRateLimiter, originValidationMiddleware
 
   if (clinicName.length < 2 || firstName.length < 2 || lastName.length < 2 || !emailPattern.test(email)) {
     validationError(res, 'Enter a clinic name, administrator name, and valid work email.');
-    return;
-  }
-  if (password.length < 6) {
-    validationError(res, 'Choose a password with at least 6 characters.');
     return;
   }
   if (!SUPPORTED_COUNTRY_CODES.includes(countryCode as typeof SUPPORTED_COUNTRY_CODES[number])) {
@@ -123,7 +120,7 @@ v1OnboardingRouter.post('/register', authRateLimiter, originValidationMiddleware
       const organizationId = `org_${crypto.randomUUID().replaceAll('-', '').slice(0, 20)}`;
       const userId = `usr_${crypto.randomUUID().replaceAll('-', '').slice(0, 20)}`;
       const now = new Date().toISOString();
-      const passwordRecord = hashPassword(password);
+      const passwordRecord = hashPassword(temporaryPassword);
       const verificationToken = createOnboardingToken();
 
       await tx.query(
@@ -153,7 +150,7 @@ v1OnboardingRouter.post('/register', authRateLimiter, originValidationMiddleware
       );
       await markOnboardingStep(tx, organizationId, OnboardingStep.REGISTER, userId, { clinicName });
 
-      return { organizationId, userId, slug, verificationToken };
+      return { organizationId, userId, slug, verificationToken, temporaryPassword };
     });
 
     const verificationUrl = `${config.appUrl.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(result.verificationToken)}`;
@@ -184,7 +181,7 @@ v1OnboardingRouter.post('/register', authRateLimiter, originValidationMiddleware
     res.status(201).json({
       data: {
         organization: { id: result.organizationId, name: clinicName, slug: result.slug },
-        administrator: { email, firstName, lastName },
+        administrator: { email, firstName, lastName, temporaryPassword: result.temporaryPassword },
         emailVerificationRequired: true,
         deliveryAccepted: delivery.accepted,
         deliveryProvider: delivery.provider,
@@ -377,7 +374,8 @@ function onboardingAdministratorOnly(req: AuthenticatedRequest, res: Response): 
 
 v1OnboardingRouter.get('/state', async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   const context = req.securityContext!;
-  const state = await getOnboardingState(context.activeOrganization.id, context.user.id);
+  const includeOrganizationUsers = req.query.includeOrganizationUsers === 'true';
+  const state = await getOnboardingState(context.activeOrganization.id, context.user.id, includeOrganizationUsers);
   if (!state) {
     res.status(404).json({ error: { code: 'ORGANIZATION_NOT_FOUND', message: 'Organization onboarding state was not found.' } });
     return;
@@ -653,7 +651,10 @@ v1OnboardingRouter.post('/invitations', requireAnyPermission([Permissions.USER_C
     delivery = { accepted: false, provider: config.email.provider, reason: 'PROVIDER_REQUEST_FAILED' };
   }
 
-  res.status(delivery.accepted ? 201 : 503).json({
+  // The invitation record is already persisted. Return success for that saved
+  // action while clearly reporting delivery separately, so a temporary mail
+  // provider outage does not trap clinic setup or invite users falsely.
+  res.status(201).json({
     data: {
       invitation: { id, email, firstName, lastName, roleCode, expiresAt, status: 'PENDING' },
       delivery: delivery.accepted ? 'accepted' : 'failed',

@@ -25,16 +25,15 @@ v1MeRouter.get('/', async (req: AuthenticatedRequest, res: Response): Promise<vo
     const all = await db.query<Organization>('SELECT * FROM organizations WHERE is_active = TRUE ORDER BY name ASC');
     availableOrgs = all.rows;
   } else {
-    const userOrgsRes = await db.query<{ organization_id: string }>(
-      'SELECT organization_id FROM user_organizations WHERE user_id = $1 AND status = $2',
+    const organizations = await db.query<Organization>(
+      `SELECT DISTINCT o.*
+       FROM organizations AS o
+       INNER JOIN user_organizations AS uo ON uo.organization_id = o.id
+       WHERE uo.user_id = $1 AND uo.status = $2 AND o.is_active = TRUE
+       ORDER BY o.name ASC`,
       [context.user.id, 'ACTIVE']
     );
-    for (const uo of userOrgsRes.rows) {
-      const oRes = await db.query<Organization>('SELECT * FROM organizations WHERE id = $1 AND is_active = TRUE', [uo.organization_id]);
-      if (oRes.rows[0] && !availableOrgs.some(ao => ao.id === oRes.rows[0].id)) {
-        availableOrgs.push(oRes.rows[0]);
-      }
-    }
+    availableOrgs = organizations.rows;
   }
 
   res.status(200).json({
